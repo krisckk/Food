@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useReducer } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react'
 
 export type CartItem = {
   menu_item_id: string
@@ -70,19 +70,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
+  // dispatch from useReducer is stable — useCallback deps can be empty
+  const addItem = useCallback((item: Omit<CartItem, 'quantity'>) =>
+    dispatch({ type: 'ADD', item }), [])
+  const removeItem = useCallback((id: string) =>
+    dispatch({ type: 'REMOVE', id }), [])
+  const updateQuantity = useCallback((id: string, qty: number) =>
+    dispatch({ type: 'UPDATE_QTY', id, qty }), [])
+  const clearCart = useCallback(() =>
+    dispatch({ type: 'CLEAR' }), [])
+
   const total = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
 
+  const value = useMemo(
+    () => ({ items, addItem, removeItem, updateQuantity, clearCart, total }),
+    [items, addItem, removeItem, updateQuantity, clearCart, total],
+  )
+
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem: item => dispatch({ type: 'ADD', item }),
-        removeItem: id => dispatch({ type: 'REMOVE', id }),
-        updateQuantity: (id, qty) => dispatch({ type: 'UPDATE_QTY', id, qty }),
-        clearCart: () => dispatch({ type: 'CLEAR' }),
-        total,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )

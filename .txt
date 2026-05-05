@@ -1,0 +1,103 @@
+Read CLAUDE.md and handoff.md first and confirm current state 
+before doing anything.
+
+Once confirmed, do these steps IN ORDER:
+
+─── STEP 1: Update seed data ───────────────────────────────
+
+Update supabase/seed.sql with the real menu:
+
+Category: 烤物 (Grilled)
+- 海苔飯卷 — 日式鮪魚沙拉 $65, 古早味肉香 $65, kimchi豬肉 $75
+- 熱壓吐司 — 皮蛋肉鬆 $60, 巧克力脆脆 $50
+- 台式肉燥飯 — 肉燥飯(含油豆腐) $50, 加滷蛋 +$10, 加滷豆乾 +$10
+
+Category: 創新 (Desserts)
+- 提拉米蘇 $50
+- 杜拜巧克力 $100
+- 檸檬糖霜磅蛋糕 $35
+- 千層蛋糕 $70
+- 焦糖烤布蕾 $30
+- 脆皮布朗尼 $45
+- 貓舌頭 $20
+- 葡式蛋撻 $45
+- 巴斯克蛋糕 — 原味 $70, 巧克力 $75
+- 曲奇 — 原味 $30, 巧克力 $30
+- 脆皮原味蛋糕 $30
+
+Category: 冰物 (Cold)
+- 雪花冰 — 牛奶/巧克力(口味擇一) $60(選配料: 湯圓 珍珠  脆笛蘇 棉花糖 巧克力碎 煉乳), 加布丁 +$15
+- 愛玉冬瓜檸檬 $35, 體驗手搓愛玉 +$20
+- 仙草 $45
+- 芋頭西米露 $10
+
+Category: 烹飪社x雄友會
+- 費南雪 $45
+
+After updating seed.sql run:
+npx supabase db reset
+
+─── STEP 2: Create branch ──────────────────────────────────
+
+git checkout -b feat/frontend
+
+─── STEP 3: Build the frontend ─────────────────────────────
+
+Build the full frontend UI matching these exact specs:
+
+LAYOUT (based on reference Image 1 — tablet ordering app):
+- Top bar: restaurant name left, icons right
+- Category tabs: horizontal scrollable tabs below top bar
+- Left panel (60%): 2-column food grid
+  - Each card: food photo, name, price, add-to-cart button
+  - Badge showing quantity if item is in cart
+- Right panel (40%): live order summary
+  - Lists items added with quantity and price
+  - Two tabs: 未送單 (Pending) / 已送單 (Sent)
+- Bottom bar: total item count + total price + 結帳 checkout button
+
+COLOR PALETTE (based on reference Image 2 — warm brown café style):
+- Page background: #F5EDD8 (warm beige)
+- Top bar & bottom bar: #8B6343 (warm brown)
+- Category tabs active: #8B6343, inactive: transparent
+- Food cards background: #FAF6EE (off-white)
+- Card border: #E8D5B7
+- Price text: #8B6343
+- Primary text: #3D2B1F (dark brown)
+- Quantity badge: red #E53E3E
+- Add button: #8B6343 with white icon
+- Right panel background: #EDE0C8
+- Checkout button: #8B6343 with white text
+
+COMPONENTS TO BUILD:
+1. src/context/CartContext.tsx
+   - add, remove, update quantity, clear cart
+   - persist to localStorage
+
+2. src/app/page.tsx (menu page — server component)
+   - fetch from GET /api/menu
+   - pass data to client components
+
+3. src/components/MenuGrid.tsx (client component)
+   - 2-column grid of food cards
+   - category tab filtering
+
+4. src/components/CartPanel.tsx (client component)
+   - right side order summary panel
+   - customer name input
+   - POST to /api/orders on checkout
+
+5. src/app/order/[id]/page.tsx
+   - order confirmation page
+   - show order ID, items, total
+   - clear cart on mount
+   - display 訂單已送出！🎉
+
+RULES:
+- Use Tailwind for all styling
+- Use the color values above — do not use default Tailwind colors
+- Server components fetch data, client components handle interaction
+- NEVER call Supabase directly from client components
+- Run npm run typecheck && npm run lint before each commit
+- Commit after each component is complete
+- Update handoff.md when done
