@@ -1,71 +1,78 @@
-# Handoff Note — feat/api-routes
+# Handoff Note — feat/frontend
 
 ## What was built
 
-Branch `feat/api-routes` is **complete and verified** (typecheck, lint, tests all pass).
+Branch `feat/frontend` is **complete and verified** (typecheck clean, lint clean, 8/8 tests pass).
+Branches in repo: `main` (API routes merged), `feat/frontend` (this session).
 
 ### Files created / modified
 
 | File | Action |
 |------|--------|
-| `src/lib/supabase.ts` | Added `createSupabaseAdminClient()` (service-role, top-level ES import) |
-| `src/lib/notion.ts` | Typed stub — always throws; ready to implement |
-| `src/app/api/menu/route.ts` | GET /api/menu — returns available items grouped by category |
-| `src/app/api/menu/route.test.ts` | 3 tests: 200 grouped, 500 on DB error, empty object |
-| `src/app/api/orders/route.ts` | POST /api/orders — full order creation flow |
-| `src/app/api/orders/route.test.ts` | 5 tests (see below) |
-| `vitest.config.ts` | Added `@` alias + `passWithNoTests: true` |
+| `supabase/seed.sql` | Replaced with 28 real menu items across 4 categories |
+| `src/lib/getMenu.ts` | New server helper — shared by API route and page Server Component |
+| `src/app/api/menu/route.ts` | Refactored to delegate to `getMenu()` |
+| `tailwind.config.ts` | Added café color palette (cafe-bg, cafe-bar, cafe-card, etc.) |
+| `src/context/CartContext.tsx` | Cart state with localStorage persistence |
+| `src/app/layout.tsx` | Wraps children with `<CartProvider>`, updated metadata |
+| `src/components/MenuGrid.tsx` | Category tabs + 2-column food card grid |
+| `src/components/CartPanel.tsx` | 未送單/已送單 tabs, qty controls, checkout flow |
+| `src/app/page.tsx` | Full menu page (server component, 60/40 layout) |
+| `src/app/order/[id]/page.tsx` | Order confirmation page |
+| `next.config.mjs` | Added HTTPS remote image patterns |
+| `src/app/(menu)/page.tsx` | Deleted (conflicted with root page) |
+| `src/app/(checkout)/page.tsx` | Deleted (conflicted with root page) |
 
-### POST /api/orders flow
-1. Zod validation → 400 on invalid body
-2. Fetch + validate menu item prices server-side → 422 if unavailable
-3. Calculate total server-side
-4. Insert `orders` row (admin client, bypasses RLS)
-5. Insert `order_items` — compensating delete + 500 if this fails
-6. Notion sync in try/catch — logs error, never blocks → returns 200 either way
-7. Return `{ order: { ...order, notion_page_id } }` — merges ID so caller doesn't need a re-fetch
+### Seed data — 4 categories, 28 items
+- **烤物**: 海苔飯卷×3, 熱壓吐司×2, 台式肉燥飯, 加滷蛋 (+add-on), 加滷豆乾 (+add-on)
+- **創新**: 13 dessert items incl. variants (巴斯克蛋糕原味/巧克力, 曲奇原味/巧克力)
+- **冰物**: 雪花冰, +布丁 add-on, 愛玉冬瓜檸檬, +手搓愛玉 add-on, 仙草, 芋頭西米露
+- **烹飪社x雄友會**: 費南雪
 
-### Tests (8/8 pass)
-- menu: 200 grouped by category, 500 on DB error, empty object when no items
-- orders: happy path (200 + notion_page_id set), Notion failure (200 + notion_page_id null), order_items failure (500 + compensating delete), 400 invalid body, 422 unavailable item
+### Checkout flow
+1. User adds items from MenuGrid → CartContext updates + localStorage syncs
+2. CartPanel 未送單 tab: enter name → 結帳
+3. POST /api/orders → on success: save `lastOrder` to localStorage → `clearCart()` → `router.push('/order/[id]')`
+4. `/order/[id]` reads `lastOrder` from localStorage → shows 訂單已送出！🎉
 
 ## Status
 
 | Item | Status |
 |------|--------|
-| GET /api/menu | Done |
-| POST /api/orders | Done |
-| Tests | Done (8/8) |
+| Seed data (28 items) | Done |
+| getMenu() server helper | Done |
+| CartContext + localStorage | Done |
+| MenuGrid (tabs + cards) | Done |
+| CartPanel (checkout) | Done |
+| Root page (60/40 layout) | Done |
+| Order confirmation page | Done |
 | typecheck | 0 errors |
 | lint | 0 warnings |
+| Tests (8/8) | Pass |
 | Notion sync implementation | **Not done** — stub throws |
-| Menu browsing UI | Not started |
-| Checkout/cart UI | Not started |
 
 ## Exact next step
 
 Implement `syncOrderToNotion` in `src/lib/notion.ts` using the Notion MCP.
 
-The function signature is already typed:
 ```ts
 export async function syncOrderToNotion(order: Order, items: OrderItem[]): Promise<string>
-// Returns the Notion page ID. Throws on failure.
+// Returns the Notion page ID. Throws on failure (caller handles gracefully).
 ```
 
-Notion page fields (from CLAUDE.md): Order ID, Customer Name, Items (multi-select), Total, Status (select: Pending/Preparing/Done), Timestamp.
+Fields: Order ID, Customer Name, Items (multi-select), Total, Status (`Pending`), Timestamp.
+Env vars: `NOTION_API_TOKEN`, `NOTION_ORDERS_DATABASE_ID`.
 
-Env vars needed: `NOTION_API_TOKEN`, `NOTION_ORDERS_DATABASE_ID` (add to `.env.local`).
+## Decisions made
 
-## Decisions and why
+- **`getMenu()` helper** — avoids relative `fetch('/api/menu')` in Server Components (problematic without a base URL at build time). Both the API route and the page call it directly.
+- **CartProvider in layout** — standard Next.js pattern: Server Component layout renders a `'use client'` component as a children wrapper without making the layout itself a client component.
+- **Add-ons as separate menu items** — fits existing schema; description field says "請搭配主餐加購" as a semantic hint. Known trade-off for the prototype.
+- **localStorage-only confirmation page** — avoids creating a new `GET /api/orders/[id]` route (and test). Known limitation: breaks on refresh or new device. Future improvement: add the GET route.
+- **Responsive layout** — on mobile the panels stack (`flex-col`), cart panel is `h-72` fixed; on desktop (`md:flex-row`) they split 60/40 filling full viewport height.
 
-- **Top-level ES import for admin client** — `require()` inside TypeScript is awkward; top-level import is fine because `@supabase/supabase-js` has no `next/headers` dependency.
-- **Notion failure → 200 not 500** — Supabase is source of truth; Notion is ops convenience. A Notion outage must not block customers placing orders.
-- **Compensating delete** — no Postgres transaction across two ORM calls; app-level compensating delete keeps DB consistent if `order_items` insert fails.
-- **Merge `notion_page_id` into response** — avoids a round-trip re-fetch while keeping the DB as source of truth.
+## Gotchas
 
-## Gotchas discovered
-
-- **Zod v4 strict UUID** — version nibble must be 1-8, variant nibble must be 8/9/a/b. Test UUID `'550e8400-e29b-41d4-a716-446655440000'` is valid; `'00000000-0000-0000-0000-000000000001'` is not (version nibble = 0).
-- **PowerShell UTF-16 LE** — `>` redirect writes UTF-16 LE; `types.ts` generated this way was flagged as binary by ESLint. Re-encoded with `[System.IO.File]::WriteAllText(...)`.
-- **API route tests need `// @vitest-environment node`** — jsdom (the default) breaks `NextResponse`.
-- **Next.js package names must be lowercase** — scaffolded in `food-bootstrap`, copied to `Food` with robocopy.
+- Deleting `(menu)/page.tsx` and `(checkout)/page.tsx` was required — Next.js App Router treats `()` route groups as transparent, so both served `/` and conflicted with `src/app/page.tsx`.
+- `clearCart()` is called in the order confirmation page's `useEffect` as belt-and-suspenders cleanup (primary clear happens in CartPanel before `router.push`).
+- The `lastOrder` localStorage key stores items + total for display on the confirmation page and the 已送單 tab.
