@@ -8,7 +8,12 @@
       "Bash(Get-Content *)",
       "Bash(git init *)",
       "Bash(git checkout *)",
-      "PowerShell($content = Get-Content \"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\" -Encoding Unicode -Raw; [System.IO.File]::WriteAllText\\(\"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\", $content, \\(New-Object System.Text.UTF8Encoding $false\\)\\); \"Converted\")"
+      "PowerShell($content = Get-Content \"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\" -Encoding Unicode -Raw; [System.IO.File]::WriteAllText\\(\"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\", $content, \\(New-Object System.Text.UTF8Encoding $false\\)\\); \"Converted\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Code\\\\Food\" -Recurse -Name)",
+      "Bash(Select-Object -First 100)",
+      "Bash(npx supabase *)",
+      "Bash(npm run *)",
+      "Bash(git add *)"
     ]
   }
 }

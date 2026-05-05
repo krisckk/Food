@@ -11,6 +11,14 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        cafe: {
+          bg:     '#F5EDD8',
+          bar:    '#8B6343',
+          card:   '#FAF6EE',
+          border: '#E8D5B7',
+          panel:  '#EDE0C8',
+          text:   '#3D2B1F',
+        },
       },
     },
   },

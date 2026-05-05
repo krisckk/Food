@@ -1,7 +1,37 @@
--- Dev seed data
+-- Dev seed data — real menu
 insert into public.menu_items (name, description, price, category) values
-  ('Margherita Pizza',  'Classic tomato and mozzarella',   12.99, 'main'),
-  ('Caesar Salad',      'Romaine, parmesan, croutons',      8.99, 'starter'),
-  ('Garlic Bread',      'Toasted with herb butter',          4.99, 'starter'),
-  ('Tiramisu',          'Espresso-soaked ladyfingers',       6.99, 'dessert'),
-  ('Sparkling Water',   '500 ml',                            2.49, 'drink');
+  -- 烤物 (Grilled)
+  ('海苔飯卷 日式鮪魚沙拉', null,                      65, '烤物'),
+  ('海苔飯卷 古早味肉香',   null,                      65, '烤物'),
+  ('海苔飯卷 kimchi豬肉',   null,                      75, '烤物'),
+  ('熱壓吐司 皮蛋肉鬆',    null,                      60, '烤物'),
+  ('熱壓吐司 巧克力脆脆',  null,                      50, '烤物'),
+  ('台式肉燥飯',           '含油豆腐',                 50, '烤物'),
+  ('加滷蛋',              '請搭配主餐加購',             10, '烤物'),
+  ('加滷豆乾',            '請搭配主餐加購',             10, '烤物'),
+
+  -- 創新 (Desserts)
+  ('提拉米蘇',            null,                       50, '創新'),
+  ('杜拜巧克力',          null,                      100, '創新'),
+  ('檸檬糖霜磅蛋糕',      null,                       35, '創新'),
+  ('千層蛋糕',            null,                       70, '創新'),
+  ('焦糖烤布蕾',          null,                       30, '創新'),
+  ('脆皮布朗尼',          null,                       45, '創新'),
+  ('貓舌頭',              null,                       20, '創新'),
+  ('葡式蛋撻',            null,                       45, '創新'),
+  ('巴斯克蛋糕 原味',     null,                       70, '創新'),
+  ('巴斯克蛋糕 巧克力',   null,                       75, '創新'),
+  ('曲奇 原味',           null,                       30, '創新'),
+  ('曲奇 巧克力',         null,                       30, '創新'),
+  ('脆皮原味蛋糕',        null,                       30, '創新'),
+
+  -- 冰物 (Cold)
+  ('雪花冰',              '牛奶/巧克力口味擇一，選配料：湯圓 珍珠 脆笛蘇 棉花糖 巧克力碎 煉乳', 60, '冰物'),
+  ('雪花冰加布丁',        '請搭配雪花冰加購',          15, '冰物'),
+  ('愛玉冬瓜檸檬',        null,                       35, '冰物'),
+  ('體驗手搓愛玉',        '請搭配愛玉冬瓜檸檬加購',    20, '冰物'),
+  ('仙草',                null,                       45, '冰物'),
+  ('芋頭西米露',          null,                       10, '冰物'),
+
+  -- 烹飪社x雄友會
+  ('費南雪',              null,                       45, '烹飪社x雄友會');

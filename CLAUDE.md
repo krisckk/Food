@@ -55,6 +55,7 @@ supabase/
 - MUST NOT expose Supabase service role key on the client side
 - NEVER modify files in supabase/migrations/ directly
 - NEVER push directly to main
+- MUST `git add . && git commit` before switching branches
 
 ## Supabase rules
 - Use server-side Supabase client in API routes & Server Components
@@ -103,3 +104,7 @@ NOTION_ORDERS_DATABASE_ID=      # server only, never NEXT_PUBLIC_
 - One commit per logical change — not per file
 - PR description must include: what changed, how to test it,
   any env vars added
+
+## Handoff protocol
+- At the end of every session or on /compact, update handoff.md
+- Include: what's done, what's next, decisions made, open questions
