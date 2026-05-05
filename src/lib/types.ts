@@ -67,21 +67,14 @@ export type Database = {
           name?: string
           price_delta?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "menu_item_modifiers_menu_item_id_fkey"
-            columns: ["menu_item_id"]
-            isOneToOne: false
-            referencedRelation: "menu_items"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       menu_items: {
         Row: {
           available: boolean
           category: string
           created_at: string
+          customization_options: Json | null
           description: string | null
           id: string
           image_url: string | null
@@ -92,6 +85,7 @@ export type Database = {
           available?: boolean
           category: string
           created_at?: string
+          customization_options?: Json | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -102,6 +96,7 @@ export type Database = {
           available?: boolean
           category?: string
           created_at?: string
+          customization_options?: Json | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -112,6 +107,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          customization_note: string | null
           id: string
           menu_item_id: string
           modifier_id: string | null
@@ -121,6 +117,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          customization_note?: string | null
           id?: string
           menu_item_id: string
           modifier_id?: string | null
@@ -130,6 +127,7 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          customization_note?: string | null
           id?: string
           menu_item_id?: string
           modifier_id?: string | null

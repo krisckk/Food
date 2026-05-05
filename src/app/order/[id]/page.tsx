@@ -41,6 +41,9 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
                 <div key={cartItemKey(item)} className="flex justify-between text-sm text-cafe-text">
                   <div className="min-w-0 mr-2">
                     <span className="truncate block">{item.name} ×{item.quantity}</span>
+                    {item.customization_note && (
+                      <span className="text-cafe-text/50 text-xs block">{item.customization_note}</span>
+                    )}
                     {item.modifier && (
                       <span className="text-cafe-text/50 text-xs">+ {item.modifier.name}</span>
                     )}

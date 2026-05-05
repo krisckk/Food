@@ -12,6 +12,7 @@ const schema = z.object({
         menu_item_id: z.string().uuid(),
         quantity: z.number().int().positive(),
         modifier_id: z.string().uuid().nullable().optional(),
+        customization_note: z.string().max(500).optional(),
       }),
     )
     .min(1),
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   const { data: menuItems, error: menuErr } = await supabase
     .from('menu_items')
-    .select('id, name, price, available')
+    .select('id, name, price, available, category')
     .in('id', ids)
 
   if (menuErr) return NextResponse.json({ error: 'DB error' }, { status: 500 })
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
         unit_price: base + (mod?.price_delta ?? 0),
         modifier_id: i.modifier_id ?? null,
         modifier_name: mod?.name ?? null,
+        customization_note: i.customization_note ?? null,
       }
     }),
   )
@@ -119,13 +121,18 @@ export async function POST(req: NextRequest) {
         const mod = i.modifier_id ? modifierMap.get(i.modifier_id) : undefined
         return {
           menu_item_id: i.menu_item_id,
-          name: mod
-            ? `${priceMap.get(i.menu_item_id)!.name} + ${mod.name}`
-            : priceMap.get(i.menu_item_id)!.name,
+          name: (() => {
+            const base = priceMap.get(i.menu_item_id)!.name
+            const parts = [base]
+            if (i.customization_note) parts.push(`(${i.customization_note})`)
+            if (mod) parts.push(`+ ${mod.name}`)
+            return parts.join(' ')
+          })(),
           quantity: i.quantity,
           unit_price: priceMap.get(i.menu_item_id)!.price + (mod?.price_delta ?? 0),
         }
       }),
+      items.map((i) => priceMap.get(i.menu_item_id)!.category),
     )
     await supabase.from('orders').update({ notion_page_id: notionPageId }).eq('id', order.id)
   } catch (err) {

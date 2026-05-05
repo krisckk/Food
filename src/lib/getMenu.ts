@@ -7,17 +7,24 @@ export type MenuByCategory = Record<string, MenuItem[]>
 
 export async function getMenu(): Promise<MenuByCategory> {
   const supabase = await createSupabaseServerClient()
-  const { data, error } = await supabase
-    .from('menu_items')
-    .select('*, menu_item_modifiers(*)')
-    .eq('available', true)
-    .order('name')
 
-  if (error) throw new Error(error.message)
+  const [itemsRes, modsRes] = await Promise.all([
+    supabase.from('menu_items').select('*').eq('available', true).order('name'),
+    supabase.from('menu_item_modifiers').select('*').eq('available', true).order('display_order'),
+  ])
 
-  return (data ?? []).reduce<MenuByCategory>((acc, item) => {
-    const typed = item as unknown as MenuItem
-    typed.modifiers = (typed.modifiers as MenuItemModifier[] | null) ?? []
+  if (itemsRes.error) throw new Error(itemsRes.error.message)
+  if (modsRes.error) throw new Error(modsRes.error.message)
+
+  const modsByItem = new Map<string, MenuItemModifier[]>()
+  for (const mod of modsRes.data ?? []) {
+    const arr = modsByItem.get(mod.menu_item_id) ?? []
+    arr.push(mod)
+    modsByItem.set(mod.menu_item_id, arr)
+  }
+
+  return (itemsRes.data ?? []).reduce<MenuByCategory>((acc, item) => {
+    const typed: MenuItem = { ...item, modifiers: modsByItem.get(item.id) ?? [] }
     ;(acc[item.category] ??= []).push(typed)
     return acc
   }, {})

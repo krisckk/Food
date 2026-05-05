@@ -24,6 +24,7 @@ Category: 創新 (Desserts)
 - 巴斯克蛋糕 — 原味 $70, 巧克力 $75
 - 曲奇 — 原味 $30, 巧克力 $30
 - 脆皮原味蛋糕 $30
+- 費南雪 $45
 
 Category: 冰物 (Cold)
 - 雪花冰 — 牛奶/巧克力(口味擇一) $60(選配料: 湯圓 珍珠  脆笛蘇 棉花糖 巧克力碎 煉乳), 加布丁 +$15
@@ -31,8 +32,6 @@ Category: 冰物 (Cold)
 - 仙草 $45
 - 芋頭西米露 $10
 
-Category: 烹飪社x雄友會
-- 費南雪 $45
 
 After updating seed.sql run:
 npx supabase db reset

@@ -14,10 +14,14 @@ export type CartItem = {
   quantity: number
   unit_price: number          // base price only
   modifier?: CartItemModifier
+  customization_note?: string // e.g. "牛奶 / 湯圓" — informational, no price impact
 }
 
-export function cartItemKey(item: Pick<CartItem, 'menu_item_id' | 'modifier'>): string {
-  return item.modifier ? `${item.menu_item_id}__${item.modifier.id}` : item.menu_item_id
+export function cartItemKey(item: Pick<CartItem, 'menu_item_id' | 'modifier' | 'customization_note'>): string {
+  const parts: string[] = [item.menu_item_id]
+  if (item.modifier) parts.push(item.modifier.id)
+  if (item.customization_note) parts.push(item.customization_note)
+  return parts.join('__')
 }
 
 type CartAction =

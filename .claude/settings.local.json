@@ -14,7 +14,9 @@
       "Bash(npx supabase *)",
       "Bash(npm run *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }
