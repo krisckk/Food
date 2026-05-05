@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "PowerShell(robocopy C:\\\\Code\\\\food-bootstrap C:\\\\Code\\\\Food /E /XD node_modules .claude /XF CLAUDE.md; $rc = $LASTEXITCODE; if \\($rc -le 7\\) { \"Copy OK \\(robocopy exit $rc\\)\" } else { \"Copy FAILED \\(robocopy exit $rc\\)\" })",
-      "PowerShell(supabase *)"
+      "PowerShell(supabase *)",
+      "Bash(Get-Content -Path \"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\" -Encoding UTF8)",
+      "Bash(Head -100)",
+      "Bash(Get-Content *)",
+      "Bash(git init *)",
+      "Bash(git checkout *)",
+      "PowerShell($content = Get-Content \"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\" -Encoding Unicode -Raw; [System.IO.File]::WriteAllText\\(\"C:\\\\Code\\\\Food\\\\src\\\\lib\\\\types.ts\", $content, \\(New-Object System.Text.UTF8Encoding $false\\)\\); \"Converted\")"
     ]
   }
 }
