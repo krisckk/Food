@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCart } from '@/context/CartContext'
+import { useCart, cartItemKey } from '@/context/CartContext'
 import type { CartItem } from '@/context/CartContext'
 
 type LastOrder = {
@@ -48,7 +48,11 @@ export default function CartPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer_name: customerName.trim(),
-          items: items.map(i => ({ menu_item_id: i.menu_item_id, quantity: i.quantity })),
+          items: items.map(i => ({
+            menu_item_id: i.menu_item_id,
+            quantity: i.quantity,
+            modifier_id: i.modifier?.id ?? null,
+          })),
         }),
       })
 
@@ -97,42 +101,51 @@ export default function CartPanel() {
             {items.length === 0 ? (
               <p className="text-cafe-text/50 text-sm text-center pt-8">購物車是空的</p>
             ) : (
-              items.map(item => (
-                <div key={item.menu_item_id} className="flex items-center gap-2 text-sm">
-                  <span className="flex-1 text-cafe-text leading-snug min-w-0 truncate">
-                    {item.name}
-                  </span>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => updateQuantity(item.menu_item_id, item.quantity - 1)}
-                      className="w-6 h-6 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-xs leading-none hover:bg-cafe-bar hover:text-white transition-colors"
-                      aria-label="減少數量"
-                    >
-                      −
-                    </button>
-                    <span className="w-5 text-center text-cafe-text font-medium tabular-nums">
-                      {item.quantity}
+              items.map(item => {
+                const key = cartItemKey(item)
+                const linePrice = (item.unit_price + (item.modifier?.price_delta ?? 0)) * item.quantity
+                return (
+                  <div key={key} className="flex items-center gap-2 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-cafe-text leading-snug truncate block">
+                        {item.name}
+                      </span>
+                      {item.modifier && (
+                        <span className="text-cafe-text/50 text-xs">+ {item.modifier.name}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => updateQuantity(key, item.quantity - 1)}
+                        className="w-6 h-6 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-xs leading-none hover:bg-cafe-bar hover:text-white transition-colors"
+                        aria-label="減少數量"
+                      >
+                        −
+                      </button>
+                      <span className="w-5 text-center text-cafe-text font-medium tabular-nums">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(key, item.quantity + 1)}
+                        className="w-6 h-6 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-xs leading-none hover:bg-cafe-bar hover:text-white transition-colors"
+                        aria-label="增加數量"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="w-12 text-right text-cafe-bar font-medium tabular-nums shrink-0">
+                      ${linePrice}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item.menu_item_id, item.quantity + 1)}
-                      className="w-6 h-6 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-xs leading-none hover:bg-cafe-bar hover:text-white transition-colors"
-                      aria-label="增加數量"
+                      onClick={() => removeItem(key)}
+                      className="text-cafe-text/40 hover:text-red-500 transition-colors w-4 text-center shrink-0"
+                      aria-label={`移除 ${item.name}`}
                     >
-                      +
+                      ×
                     </button>
                   </div>
-                  <span className="w-12 text-right text-cafe-bar font-medium tabular-nums shrink-0">
-                    ${item.unit_price * item.quantity}
-                  </span>
-                  <button
-                    onClick={() => removeItem(item.menu_item_id)}
-                    className="text-cafe-text/40 hover:text-red-500 transition-colors w-4 text-center shrink-0"
-                    aria-label={`移除 ${item.name}`}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
 
@@ -167,19 +180,23 @@ export default function CartPanel() {
                 訂單 #{lastOrder.orderId.slice(0, 8)}
               </p>
               <div className="space-y-2">
-                {lastOrder.items.map(item => (
-                  <div
-                    key={item.menu_item_id}
-                    className="flex justify-between text-sm text-cafe-text"
-                  >
-                    <span className="min-w-0 truncate mr-2">
-                      {item.name} ×{item.quantity}
-                    </span>
-                    <span className="text-cafe-bar font-medium tabular-nums shrink-0">
-                      ${item.unit_price * item.quantity}
-                    </span>
-                  </div>
-                ))}
+                {lastOrder.items.map(item => {
+                  const key = cartItemKey(item)
+                  const linePrice = (item.unit_price + (item.modifier?.price_delta ?? 0)) * item.quantity
+                  return (
+                    <div key={key} className="flex justify-between text-sm text-cafe-text">
+                      <div className="min-w-0 mr-2">
+                        <span className="truncate block">{item.name} ×{item.quantity}</span>
+                        {item.modifier && (
+                          <span className="text-cafe-text/50 text-xs">+ {item.modifier.name}</span>
+                        )}
+                      </div>
+                      <span className="text-cafe-bar font-medium tabular-nums shrink-0">
+                        ${linePrice}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
               <div className="border-t border-cafe-border pt-2 flex justify-between font-bold text-cafe-text">
                 <span>總計</span>

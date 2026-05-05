@@ -2,17 +2,28 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react'
 
+export type CartItemModifier = {
+  id: string
+  name: string
+  price_delta: number
+}
+
 export type CartItem = {
   menu_item_id: string
   name: string
   quantity: number
-  unit_price: number
+  unit_price: number          // base price only
+  modifier?: CartItemModifier
+}
+
+export function cartItemKey(item: Pick<CartItem, 'menu_item_id' | 'modifier'>): string {
+  return item.modifier ? `${item.menu_item_id}__${item.modifier.id}` : item.menu_item_id
 }
 
 type CartAction =
   | { type: 'ADD'; item: Omit<CartItem, 'quantity'> }
-  | { type: 'REMOVE'; id: string }
-  | { type: 'UPDATE_QTY'; id: string; qty: number }
+  | { type: 'REMOVE'; key: string }
+  | { type: 'UPDATE_QTY'; key: string; qty: number }
   | { type: 'CLEAR' }
   | { type: 'HYDRATE'; items: CartItem[] }
 
@@ -21,22 +32,21 @@ function reducer(state: CartItem[], action: CartAction): CartItem[] {
     case 'HYDRATE':
       return action.items
     case 'ADD': {
-      const existing = state.find(i => i.menu_item_id === action.item.menu_item_id)
+      const key = cartItemKey(action.item)
+      const existing = state.find(i => cartItemKey(i) === key)
       if (existing) {
         return state.map(i =>
-          i.menu_item_id === action.item.menu_item_id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
+          cartItemKey(i) === key ? { ...i, quantity: i.quantity + 1 } : i
         )
       }
       return [...state, { ...action.item, quantity: 1 }]
     }
     case 'REMOVE':
-      return state.filter(i => i.menu_item_id !== action.id)
+      return state.filter(i => cartItemKey(i) !== action.key)
     case 'UPDATE_QTY':
-      if (action.qty <= 0) return state.filter(i => i.menu_item_id !== action.id)
+      if (action.qty <= 0) return state.filter(i => cartItemKey(i) !== action.key)
       return state.map(i =>
-        i.menu_item_id === action.id ? { ...i, quantity: action.qty } : i
+        cartItemKey(i) === action.key ? { ...i, quantity: action.qty } : i
       )
     case 'CLEAR':
       return []
@@ -46,8 +56,8 @@ function reducer(state: CartItem[], action: CartAction): CartItem[] {
 type CartContextValue = {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'>) => void
-  removeItem: (menu_item_id: string) => void
-  updateQuantity: (menu_item_id: string, qty: number) => void
+  removeItem: (key: string) => void
+  updateQuantity: (key: string, qty: number) => void
   clearCart: () => void
   total: number
 }
@@ -70,17 +80,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
-  // dispatch from useReducer is stable — useCallback deps can be empty
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>) =>
     dispatch({ type: 'ADD', item }), [])
-  const removeItem = useCallback((id: string) =>
-    dispatch({ type: 'REMOVE', id }), [])
-  const updateQuantity = useCallback((id: string, qty: number) =>
-    dispatch({ type: 'UPDATE_QTY', id, qty }), [])
+  const removeItem = useCallback((key: string) =>
+    dispatch({ type: 'REMOVE', key }), [])
+  const updateQuantity = useCallback((key: string, qty: number) =>
+    dispatch({ type: 'UPDATE_QTY', key, qty }), [])
   const clearCart = useCallback(() =>
     dispatch({ type: 'CLEAR' }), [])
 
-  const total = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
+  const total = items.reduce(
+    (sum, i) => sum + (i.unit_price + (i.modifier?.price_delta ?? 0)) * i.quantity,
+    0
+  )
 
   const value = useMemo(
     () => ({ items, addItem, removeItem, updateQuantity, clearCart, total }),

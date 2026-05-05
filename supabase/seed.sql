@@ -7,8 +7,6 @@ insert into public.menu_items (name, description, price, category) values
   ('熱壓吐司 皮蛋肉鬆',    null,                      60, '烤物'),
   ('熱壓吐司 巧克力脆脆',  null,                      50, '烤物'),
   ('台式肉燥飯',           '含油豆腐',                 50, '烤物'),
-  ('加滷蛋',              '請搭配主餐加購',             10, '烤物'),
-  ('加滷豆乾',            '請搭配主餐加購',             10, '烤物'),
 
   -- 創新 (Desserts)
   ('提拉米蘇',            null,                       50, '創新'),
@@ -24,6 +22,7 @@ insert into public.menu_items (name, description, price, category) values
   ('曲奇 原味',           null,                       30, '創新'),
   ('曲奇 巧克力',         null,                       30, '創新'),
   ('脆皮原味蛋糕',        null,                       30, '創新'),
+  ('費南雪',              null,                       45, '烹飪社x雄友會'),
 
   -- 冰物 (Cold)
   ('雪花冰',              '牛奶/巧克力口味擇一，選配料：湯圓 珍珠 脆笛蘇 棉花糖 巧克力碎 煉乳', 60, '冰物'),
@@ -31,7 +30,10 @@ insert into public.menu_items (name, description, price, category) values
   ('愛玉冬瓜檸檬',        null,                       35, '冰物'),
   ('體驗手搓愛玉',        '請搭配愛玉冬瓜檸檬加購',    20, '冰物'),
   ('仙草',                null,                       45, '冰物'),
-  ('芋頭西米露',          null,                       10, '冰物'),
+  ('芋頭西米露',          null,                       10, '冰物');
 
-  -- 烹飪社x雄友會
-  ('費南雪',              null,                       45, '烹飪社x雄友會');
+-- Modifiers for 台式肉燥飯
+insert into public.menu_item_modifiers (menu_item_id, name, price_delta, display_order)
+select id, '加滷蛋',   10, 1 from public.menu_items where name = '台式肉燥飯'
+union all
+select id, '加滷豆乾', 10, 2 from public.menu_items where name = '台式肉燥飯';

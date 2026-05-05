@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useCart } from '@/context/CartContext'
+import { useCart, cartItemKey } from '@/context/CartContext'
 import type { CartItem } from '@/context/CartContext'
 
 type LastOrder = {
@@ -35,16 +35,22 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
 
         {order && (
           <div className="space-y-2 border-t border-cafe-border pt-4">
-            {order.items.map(item => (
-              <div key={item.menu_item_id} className="flex justify-between text-sm text-cafe-text">
-                <span className="min-w-0 truncate mr-2">
-                  {item.name} ×{item.quantity}
-                </span>
-                <span className="text-cafe-bar font-medium tabular-nums shrink-0">
-                  ${item.unit_price * item.quantity}
-                </span>
-              </div>
-            ))}
+            {order.items.map(item => {
+              const linePrice = (item.unit_price + (item.modifier?.price_delta ?? 0)) * item.quantity
+              return (
+                <div key={cartItemKey(item)} className="flex justify-between text-sm text-cafe-text">
+                  <div className="min-w-0 mr-2">
+                    <span className="truncate block">{item.name} ×{item.quantity}</span>
+                    {item.modifier && (
+                      <span className="text-cafe-text/50 text-xs">+ {item.modifier.name}</span>
+                    )}
+                  </div>
+                  <span className="text-cafe-bar font-medium tabular-nums shrink-0">
+                    ${linePrice}
+                  </span>
+                </div>
+              )
+            })}
             <div className="flex justify-between font-bold text-cafe-text border-t border-cafe-border pt-2 mt-2">
               <span>總計</span>
               <span className="text-cafe-bar tabular-nums">${order.total}</span>

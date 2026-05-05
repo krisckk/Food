@@ -11,6 +11,7 @@ const schema = z.object({
       z.object({
         menu_item_id: z.string().uuid(),
         quantity: z.number().int().positive(),
+        modifier_id: z.string().uuid().nullable().optional(),
       }),
     )
     .min(1),
@@ -44,10 +45,39 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const total = items.reduce(
-    (sum, i) => sum + priceMap.get(i.menu_item_id)!.price * i.quantity,
-    0,
-  )
+  // Fetch modifiers in a single IN query (skipped when no modifiers present)
+  const modifierIds = Array.from(new Set(items.flatMap((i) => (i.modifier_id ? [i.modifier_id] : []))))
+  type ModifierRow = { id: string; name: string; price_delta: number; available: boolean; menu_item_id: string }
+  let modifierMap = new Map<string, ModifierRow>()
+
+  if (modifierIds.length > 0) {
+    const { data: mods, error: modErr } = await supabase
+      .from('menu_item_modifiers')
+      .select('id, name, price_delta, available, menu_item_id')
+      .in('id', modifierIds)
+
+    if (modErr) return NextResponse.json({ error: 'DB error' }, { status: 500 })
+    modifierMap = new Map(mods.map((m) => [m.id, { ...m, price_delta: Number(m.price_delta) }]))
+  }
+
+  // Validate each modifier is available and belongs to the ordered item
+  for (const item of items) {
+    if (item.modifier_id) {
+      const mod = modifierMap.get(item.modifier_id)
+      if (!mod?.available) {
+        return NextResponse.json({ error: `Modifier ${item.modifier_id} unavailable` }, { status: 422 })
+      }
+      if (mod.menu_item_id !== item.menu_item_id) {
+        return NextResponse.json({ error: 'Modifier does not belong to item' }, { status: 422 })
+      }
+    }
+  }
+
+  const total = items.reduce((sum, i) => {
+    const base = priceMap.get(i.menu_item_id)!.price
+    const delta = i.modifier_id ? (modifierMap.get(i.modifier_id)?.price_delta ?? 0) : 0
+    return sum + (base + delta) * i.quantity
+  }, 0)
 
   const { data: order, error: orderErr } = await supabase
     .from('orders')
@@ -60,12 +90,18 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: itemsErr } = await supabase.from('order_items').insert(
-    items.map((i) => ({
-      order_id: order.id,
-      menu_item_id: i.menu_item_id,
-      quantity: i.quantity,
-      unit_price: priceMap.get(i.menu_item_id)!.price,
-    })),
+    items.map((i) => {
+      const base = priceMap.get(i.menu_item_id)!.price
+      const mod = i.modifier_id ? modifierMap.get(i.modifier_id) : undefined
+      return {
+        order_id: order.id,
+        menu_item_id: i.menu_item_id,
+        quantity: i.quantity,
+        unit_price: base + (mod?.price_delta ?? 0),
+        modifier_id: i.modifier_id ?? null,
+        modifier_name: mod?.name ?? null,
+      }
+    }),
   )
 
   if (itemsErr) {
@@ -79,12 +115,17 @@ export async function POST(req: NextRequest) {
   try {
     notionPageId = await syncOrderToNotion(
       order,
-      items.map((i) => ({
-        menu_item_id: i.menu_item_id,
-        name: priceMap.get(i.menu_item_id)!.name,
-        quantity: i.quantity,
-        unit_price: priceMap.get(i.menu_item_id)!.price,
-      })),
+      items.map((i) => {
+        const mod = i.modifier_id ? modifierMap.get(i.modifier_id) : undefined
+        return {
+          menu_item_id: i.menu_item_id,
+          name: mod
+            ? `${priceMap.get(i.menu_item_id)!.name} + ${mod.name}`
+            : priceMap.get(i.menu_item_id)!.name,
+          quantity: i.quantity,
+          unit_price: priceMap.get(i.menu_item_id)!.price + (mod?.price_delta ?? 0),
+        }
+      }),
     )
     await supabase.from('orders').update({ notion_page_id: notionPageId }).eq('id', order.id)
   } catch (err) {

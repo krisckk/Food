@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -34,6 +39,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_item_modifiers: {
+        Row: {
+          available: boolean
+          created_at: string
+          display_order: number
+          id: string
+          menu_item_id: string
+          name: string
+          price_delta: number
+        }
+        Insert: {
+          available?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          menu_item_id: string
+          name: string
+          price_delta?: number
+        }
+        Update: {
+          available?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          menu_item_id?: string
+          name?: string
+          price_delta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_modifiers_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           available: boolean
@@ -71,6 +114,8 @@ export type Database = {
         Row: {
           id: string
           menu_item_id: string
+          modifier_id: string | null
+          modifier_name: string | null
           order_id: string
           quantity: number
           unit_price: number
@@ -78,6 +123,8 @@ export type Database = {
         Insert: {
           id?: string
           menu_item_id: string
+          modifier_id?: string | null
+          modifier_name?: string | null
           order_id: string
           quantity?: number
           unit_price: number
@@ -85,6 +132,8 @@ export type Database = {
         Update: {
           id?: string
           menu_item_id?: string
+          modifier_id?: string | null
+          modifier_name?: string | null
           order_id?: string
           quantity?: number
           unit_price?: number
@@ -95,6 +144,13 @@ export type Database = {
             columns: ["menu_item_id"]
             isOneToOne: false
             referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_modifier_id_fkey"
+            columns: ["modifier_id"]
+            isOneToOne: false
+            referencedRelation: "menu_item_modifiers"
             referencedColumns: ["id"]
           },
           {
@@ -277,4 +333,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
