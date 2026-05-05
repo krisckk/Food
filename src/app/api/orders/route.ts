@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: menuItems, error: menuErr } = await supabase
     .from('menu_items')
-    .select('id, price, available')
+    .select('id, name, price, available')
     .in('id', ids)
 
   if (menuErr) return NextResponse.json({ error: 'DB error' }, { status: 500 })
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       order,
       items.map((i) => ({
         menu_item_id: i.menu_item_id,
+        name: priceMap.get(i.menu_item_id)!.name,
         quantity: i.quantity,
         unit_price: priceMap.get(i.menu_item_id)!.price,
       })),
