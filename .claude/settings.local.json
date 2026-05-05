@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(robocopy C:\\\\Code\\\\food-bootstrap C:\\\\Code\\\\Food /E /XD node_modules .claude /XF CLAUDE.md; $rc = $LASTEXITCODE; if \\($rc -le 7\\) { \"Copy OK \\(robocopy exit $rc\\)\" } else { \"Copy FAILED \\(robocopy exit $rc\\)\" })",
+      "PowerShell(supabase *)"
+    ]
+  }
+}
