@@ -5,6 +5,9 @@ type OrderItem = Pick<Tables<'order_items'>, 'menu_item_id' | 'quantity' | 'unit
   name: string
 }
 
+export const STATUS_PROGRESSION = ['已點餐', '已付款', '已做完', '已送達', 'Done'] as const
+export type OrderStatus = (typeof STATUS_PROGRESSION)[number]
+
 async function createNotionPage(
   token: string,
   databaseId: string,
@@ -59,7 +62,13 @@ export async function syncOrderToNotion(
   // Master page — one per order, for the whole view
   const allCategories = Array.from(new Set(itemCategories))
   const masterPageId = await createNotionPage(
-    token, databaseId, order, items, allCategories, order.total, true,
+    token,
+    databaseId,
+    order,
+    items,
+    allCategories,
+    order.total,
+    true,
   )
 
   // Per-category pages — for category-specific views
@@ -76,4 +85,80 @@ export async function syncOrderToNotion(
   }
 
   return masterPageId
+}
+
+export async function updateSummaryStatus(orderId: string): Promise<string | null> {
+  const token = process.env.NOTION_API_TOKEN
+  const databaseId = process.env.NOTION_ORDERS_DATABASE_ID
+  if (!token || !databaseId) throw new Error('Notion env vars not set')
+
+  // 1. Fetch all pages for this Order ID
+  const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': '2022-06-28',
+    },
+    body: JSON.stringify({
+      filter: {
+        property: 'Order ID',
+        title: { equals: orderId },
+      },
+    }),
+  })
+
+  if (!queryRes.ok) {
+    const text = await queryRes.text()
+    throw new Error(`Notion Query error ${queryRes.status}: ${text}`)
+  }
+
+  const { results } = (await queryRes.json()) as { results: any[] }
+
+  if (results.length === 0) return null
+
+  const summaryPage = results.find((p) => p.properties['Is Summary']?.checkbox === true)
+  const categoryPages = results.filter((p) => p.properties['Is Summary']?.checkbox === false)
+
+  if (!summaryPage || categoryPages.length === 0) return null
+
+  // 2. Calculate the minimum status across all category pages
+  let minStatusIndex = STATUS_PROGRESSION.length - 1
+
+  for (const page of categoryPages) {
+    const statusName = page.properties.Status?.select?.name as OrderStatus
+    const statusIndex = STATUS_PROGRESSION.indexOf(statusName)
+    if (statusIndex !== -1 && statusIndex < minStatusIndex) {
+      minStatusIndex = statusIndex
+    }
+  }
+
+  const targetStatus = STATUS_PROGRESSION[minStatusIndex]
+  const currentSummaryStatus = summaryPage.properties.Status?.select?.name
+
+  // 3. Update summary page if status changed
+  if (targetStatus !== currentSummaryStatus) {
+    const updateRes = await fetch(`https://api.notion.com/v1/pages/${summaryPage.id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28',
+      },
+      body: JSON.stringify({
+        properties: {
+          Status: { select: { name: targetStatus } },
+        },
+      }),
+    })
+
+    if (!updateRes.ok) {
+      const text = await updateRes.text()
+      throw new Error(`Notion Update error ${updateRes.status}: ${text}`)
+    }
+
+    return targetStatus
+  }
+
+  return currentSummaryStatus
 }
