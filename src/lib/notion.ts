@@ -92,6 +92,8 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
   const databaseId = process.env.NOTION_ORDERS_DATABASE_ID
   if (!token || !databaseId) throw new Error('Notion env vars not set')
 
+  console.log(`[notion] Starting sync for Order ID: ${orderId}`)
+
   // 1. Fetch all pages for this Order ID
   const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
     method: 'POST',
@@ -110,15 +112,19 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
 
   if (!queryRes.ok) {
     const text = await queryRes.text()
+    console.error(`[notion] Query failed for ${orderId}:`, text)
     throw new Error(`Notion Query error ${queryRes.status}: ${text}`)
   }
 
   const { results } = (await queryRes.json()) as { results: any[] }
+  console.log(`[notion] Found ${results.length} pages for order ${orderId}`)
 
   if (results.length === 0) return null
 
   const summaryPage = results.find((p) => p.properties['Is Summary']?.checkbox === true)
   const categoryPages = results.filter((p) => p.properties['Is Summary']?.checkbox === false)
+
+  console.log(`[notion] Summary page found: ${!!summaryPage}, Category pages: ${categoryPages.length}`)
 
   if (!summaryPage || categoryPages.length === 0) return null
 
@@ -126,18 +132,33 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
   let minStatusIndex = STATUS_PROGRESSION.length - 1
 
   for (const page of categoryPages) {
-    const statusName = page.properties.Status?.select?.name as OrderStatus
+    // Handle both 'select' and 'status' property types for robustness
+    const statusProp = page.properties.Status
+    const statusName = (statusProp?.select?.name || statusProp?.status?.name) as OrderStatus
+    
     const statusIndex = STATUS_PROGRESSION.indexOf(statusName)
+    console.log(`[notion] Page ${page.id} has status: ${statusName} (index ${statusIndex})`)
+    
     if (statusIndex !== -1 && statusIndex < minStatusIndex) {
       minStatusIndex = statusIndex
     }
   }
 
   const targetStatus = STATUS_PROGRESSION[minStatusIndex]
-  const currentSummaryStatus = summaryPage.properties.Status?.select?.name
+  const summaryStatusProp = summaryPage.properties.Status
+  const currentSummaryStatus = summaryStatusProp?.select?.name || summaryStatusProp?.status?.name
+
+  console.log(`[notion] Order ${orderId}: Target=${targetStatus}, Current=${currentSummaryStatus}`)
 
   // 3. Update summary page if status changed
   if (targetStatus !== currentSummaryStatus) {
+    console.log(`[notion] Updating summary page ${summaryPage.id} to ${targetStatus}`)
+    
+    // Determine property update based on what the page already has
+    const statusUpdate = summaryStatusProp?.type === 'status' 
+      ? { status: { name: targetStatus } }
+      : { select: { name: targetStatus } }
+
     const updateRes = await fetch(`https://api.notion.com/v1/pages/${summaryPage.id}`, {
       method: 'PATCH',
       headers: {
@@ -147,18 +168,19 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
       },
       body: JSON.stringify({
         properties: {
-          Status: { select: { name: targetStatus } },
+          Status: statusUpdate,
         },
       }),
     })
 
     if (!updateRes.ok) {
       const text = await updateRes.text()
+      console.error(`[notion] Update failed for ${summaryPage.id}:`, text)
       throw new Error(`Notion Update error ${updateRes.status}: ${text}`)
     }
 
     return targetStatus
   }
 
-  return currentSummaryStatus
+  return currentSummaryStatus as string
 }

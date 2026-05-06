@@ -10,10 +10,7 @@ export default async function Home() {
     <div className="h-screen bg-cafe-bg text-cafe-text flex flex-col overflow-hidden">
       <header className="bg-cafe-bar text-white px-4 py-3 flex items-center justify-between shrink-0 z-20">
         <span className="font-semibold text-lg">烹飪社 x 雄友會</span>
-        <div className="flex items-center gap-3">
-          <RefreshButton />
-          <span className="text-sm opacity-75">點餐系統</span>
-        </div>
+        <span className="text-sm opacity-75">點餐系統</span>
       </header>
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden">
