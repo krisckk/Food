@@ -92,7 +92,7 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
   const databaseId = process.env.NOTION_ORDERS_DATABASE_ID
   if (!token || !databaseId) throw new Error('Notion env vars not set')
 
-  console.log(`[notion] Starting sync for Order ID: ${orderId}`)
+  console.log(`[notion] Starting bi-directional sync for Order ID: ${orderId}`)
 
   // 1. Fetch all pages for this Order ID
   const queryRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
@@ -117,73 +117,77 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
   }
 
   const { results } = (await queryRes.json()) as { results: any[] }
-  console.log(`[notion] Found ${results.length} pages for order ${orderId}`)
-
   if (results.length === 0) return null
 
   const summaryPage = results.find((p) => p.properties['Is Summary']?.checkbox === true)
   const categoryPages = results.filter((p) => p.properties['Is Summary']?.checkbox === false)
 
-  console.log(`[notion] Summary page found: ${!!summaryPage}, Category pages: ${categoryPages.length}`)
-
   if (!summaryPage || categoryPages.length === 0) return null
 
-  // 2. Calculate the minimum status across all category pages
-  let minStatusIndex = STATUS_PROGRESSION.length - 1
+  const summaryStatusProp = summaryPage.properties.Status
+  const currentSummaryStatus = (summaryStatusProp?.select?.name || summaryStatusProp?.status?.name) as OrderStatus
+  const summaryStatusIndex = STATUS_PROGRESSION.indexOf(currentSummaryStatus)
+
+  // 2. Calculate the MINIMUM and MAXIMUM status across all category pages
+  let minCategoryStatusIndex = STATUS_PROGRESSION.length - 1
+  let maxCategoryStatusIndex = 0
 
   for (const page of categoryPages) {
-    // Handle both 'select' and 'status' property types for robustness
     const statusProp = page.properties.Status
     const statusName = (statusProp?.select?.name || statusProp?.status?.name) as OrderStatus
-    
-    // Get category name for better logging
-    const catName = page.properties.Category?.multi_select?.map((c: any) => c.name).join(', ') || 'Unknown'
-    
     const statusIndex = STATUS_PROGRESSION.indexOf(statusName)
-    console.log(`[notion] Category Page [${catName}] (ID: ${page.id.slice(0,8)}) has status: ${statusName} (index ${statusIndex})`)
     
-    if (statusIndex !== -1 && statusIndex < minStatusIndex) {
-      minStatusIndex = statusIndex
+    if (statusIndex !== -1) {
+      if (statusIndex < minCategoryStatusIndex) minCategoryStatusIndex = statusIndex
+      if (statusIndex > maxCategoryStatusIndex) maxCategoryStatusIndex = statusIndex
     }
   }
 
-  const targetStatus = STATUS_PROGRESSION[minStatusIndex]
-  const summaryStatusProp = summaryPage.properties.Status
-  const currentSummaryStatus = summaryStatusProp?.select?.name || summaryStatusProp?.status?.name
-
-  console.log(`[notion] Order ${orderId}: Target=${targetStatus}, Current=${currentSummaryStatus}`)
-
-  // 3. Update summary page if status changed
-  if (targetStatus !== currentSummaryStatus) {
-    console.log(`[notion] Updating summary page ${summaryPage.id} to ${targetStatus}`)
+  // BI-DIRECTIONAL LOGIC:
+  // A. Top-Down Sync: If Summary is "ahead" of ALL categories, push Summary status down
+  if (summaryStatusIndex > maxCategoryStatusIndex) {
+    console.log(`[notion] Top-Down Sync: Summary (${currentSummaryStatus}) is ahead of categories. Pushing down...`)
     
-    // Determine property update based on what the page already has
-    const statusUpdate = summaryStatusProp?.type === 'status' 
-      ? { status: { name: targetStatus } }
-      : { select: { name: targetStatus } }
+    for (const page of categoryPages) {
+      const catStatusProp = page.properties.Status
+      const statusUpdate = catStatusProp?.type === 'status' 
+        ? { status: { name: currentSummaryStatus } }
+        : { select: { name: currentSummaryStatus } }
 
-    const updateRes = await fetch(`https://api.notion.com/v1/pages/${summaryPage.id}`, {
+      await fetch(`https://api.notion.com/v1/pages/${page.id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+        },
+        body: JSON.stringify({ properties: { Status: statusUpdate } }),
+      })
+    }
+    return currentSummaryStatus
+  }
+
+  // B. Bottom-Up Sync: If Summary is "behind" the minimum category, pull Summary status up
+  const targetSummaryStatus = STATUS_PROGRESSION[minCategoryStatusIndex]
+  if (targetSummaryStatus !== currentSummaryStatus) {
+    console.log(`[notion] Bottom-Up Sync: Updating summary to ${targetSummaryStatus} (min of categories)`)
+    
+    const summaryUpdate = summaryStatusProp?.type === 'status' 
+      ? { status: { name: targetSummaryStatus } }
+      : { select: { name: targetSummaryStatus } }
+
+    await fetch(`https://api.notion.com/v1/pages/${summaryPage.id}`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Notion-Version': '2022-06-28',
       },
-      body: JSON.stringify({
-        properties: {
-          Status: statusUpdate,
-        },
-      }),
+      body: JSON.stringify({ properties: { Status: summaryUpdate } }),
     })
 
-    if (!updateRes.ok) {
-      const text = await updateRes.text()
-      console.error(`[notion] Update failed for ${summaryPage.id}:`, text)
-      throw new Error(`Notion Update error ${updateRes.status}: ${text}`)
-    }
-
-    return targetStatus
+    return targetSummaryStatus
   }
 
-  return currentSummaryStatus as string
+  return currentSummaryStatus
 }
