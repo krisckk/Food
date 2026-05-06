@@ -22,12 +22,12 @@ export async function getMenu(): Promise<MenuByCategory> {
         .limit(10) // Only sync recent 10 active orders to avoid rate limits
 
       if (activeOrders) {
-        for (const order of activeOrders) {
+        await Promise.allSettled(activeOrders.map(async (order) => {
           const newStatus = await updateSummaryStatus(order.id)
           if (newStatus) {
             await adminClient.from('orders').update({ status: newStatus }).eq('id', order.id)
           }
-        }
+        }))
       }
     } catch (err) {
       console.error('[sync] Background sync failed:', err)

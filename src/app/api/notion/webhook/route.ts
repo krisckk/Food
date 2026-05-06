@@ -20,12 +20,12 @@ export async function GET(req: NextRequest) {
         .limit(5) // Limit to avoid hitting Notion rate limits too hard
 
       if (activeOrders) {
-        for (const order of activeOrders) {
+        await Promise.allSettled(activeOrders.map(async (order) => {
           const newStatus = await updateSummaryStatus(order.id)
           if (newStatus) {
             await supabase.from('orders').update({ status: newStatus }).eq('id', order.id)
           }
-        }
+        }))
       }
       return NextResponse.json({ success: true, count: activeOrders?.length || 0 })
     }

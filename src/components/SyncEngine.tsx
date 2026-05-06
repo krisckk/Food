@@ -15,8 +15,8 @@ export default function SyncEngine() {
       }
     }
 
-    // Run every 30 seconds to keep Notion database tidy
-    const interval = setInterval(runGlobalSync, 30000)
+    // Run every 10 seconds to keep Notion database tidy
+    const interval = setInterval(runGlobalSync, 10000)
     
     // Also run once immediately on mount
     runGlobalSync()

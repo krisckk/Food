@@ -148,13 +148,13 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
   if (summaryStatusIndex > maxCategoryStatusIndex) {
     console.log(`[notion] Top-Down Sync: Summary (${currentSummaryStatus}) is ahead of categories. Pushing down...`)
     
-    for (const page of categoryPages) {
+    const patchPromises = categoryPages.map(page => {
       const catStatusProp = page.properties.Status
       const statusUpdate = catStatusProp?.type === 'status' 
         ? { status: { name: currentSummaryStatus } }
         : { select: { name: currentSummaryStatus } }
 
-      await fetch(`https://api.notion.com/v1/pages/${page.id}`, {
+      return fetch(`https://api.notion.com/v1/pages/${page.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -163,7 +163,9 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
         },
         body: JSON.stringify({ properties: { Status: statusUpdate } }),
       })
-    }
+    })
+
+    await Promise.all(patchPromises)
     return currentSummaryStatus
   }
 
