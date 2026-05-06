@@ -1,27 +1,32 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 export default function SyncEngine() {
+  const isSyncing = useRef(false)
+
   useEffect(() => {
-    // This function calls the sync API which checks all active orders
+    let timeoutId: NodeJS.Timeout
+
     const runGlobalSync = async () => {
+      if (isSyncing.current) return
+      
+      isSyncing.current = true
       try {
-        // We call a special "sync all" mode on the webhook endpoint
-        // Or just trigger a general sync check
         await fetch('/api/notion/webhook?all=true')
       } catch (err) {
         // Silent fail
+      } finally {
+        isSyncing.current = false
+        // Aggressive polling: run again 3 seconds AFTER the last request finishes
+        timeoutId = setTimeout(runGlobalSync, 3000)
       }
     }
 
-    // Run every 10 seconds to keep Notion database tidy
-    const interval = setInterval(runGlobalSync, 10000)
-    
-    // Also run once immediately on mount
+    // Start the engine
     runGlobalSync()
 
-    return () => clearInterval(interval)
+    return () => clearTimeout(timeoutId)
   }, [])
 
   return null // This component doesn't render anything
