@@ -136,8 +136,11 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
     const statusProp = page.properties.Status
     const statusName = (statusProp?.select?.name || statusProp?.status?.name) as OrderStatus
     
+    // Get category name for better logging
+    const catName = page.properties.Category?.multi_select?.map((c: any) => c.name).join(', ') || 'Unknown'
+    
     const statusIndex = STATUS_PROGRESSION.indexOf(statusName)
-    console.log(`[notion] Page ${page.id} has status: ${statusName} (index ${statusIndex})`)
+    console.log(`[notion] Category Page [${catName}] (ID: ${page.id.slice(0,8)}) has status: ${statusName} (index ${statusIndex})`)
     
     if (statusIndex !== -1 && statusIndex < minStatusIndex) {
       minStatusIndex = statusIndex
