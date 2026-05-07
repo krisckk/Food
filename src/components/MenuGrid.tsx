@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import type { MenuByCategory, MenuItem } from '@/lib/getMenu'
 
-type CustomizationGroup = { name: string; required?: boolean; options: string[] }
+type CustomizationGroup = { name: string; required?: boolean; multiple?: boolean; options: string[] }
 type CustomizationOptions = { groups: CustomizationGroup[] }
 
 function getCustomGroups(item: MenuItem): CustomizationGroup[] {
@@ -159,10 +159,10 @@ function CustomizationSheet({
   onConfirm: (payload: ConfirmPayload) => void
 }) {
   const groups = getCustomGroups(item)
-  const [customizations, setCustomizations] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {}
+  const [customizations, setCustomizations] = useState<Record<string, string[]>>(() => {
+    const initial: Record<string, string[]> = {}
     for (const g of groups) {
-      if (g.required) initial[g.name] = g.options[0] ?? ''
+      initial[g.name] = g.required && g.options[0] ? [g.options[0]] : []
     }
     return initial
   })
@@ -181,7 +181,7 @@ function CustomizationSheet({
 
   function handleConfirm() {
     const note = groups
-      .map(g => customizations[g.name] ?? '')
+      .map(g => (customizations[g.name] ?? []).join('、'))
       .filter(Boolean)
       .join(' / ') || undefined
 
@@ -226,13 +226,9 @@ function CustomizationSheet({
                 {!group.required && (
                   <OptionChip
                     label={`不選${group.name}`}
-                    selected={!customizations[group.name]}
+                    selected={!(customizations[group.name]?.length)}
                     onClick={() =>
-                      setCustomizations(prev => {
-                        const next = { ...prev }
-                        delete next[group.name]
-                        return next
-                      })
+                      setCustomizations(prev => ({ ...prev, [group.name]: [] }))
                     }
                   />
                 )}
@@ -240,9 +236,16 @@ function CustomizationSheet({
                   <OptionChip
                     key={opt}
                     label={opt}
-                    selected={customizations[group.name] === opt}
+                    selected={customizations[group.name]?.includes(opt) ?? false}
                     onClick={() =>
-                      setCustomizations(prev => ({ ...prev, [group.name]: opt }))
+                      setCustomizations(prev => {
+                        if (group.multiple) {
+                          const cur = prev[group.name] ?? []
+                          const next = cur.includes(opt) ? cur.filter(o => o !== opt) : [...cur, opt]
+                          return { ...prev, [group.name]: next }
+                        }
+                        return { ...prev, [group.name]: [opt] }
+                      })
                     }
                   />
                 ))}
