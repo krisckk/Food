@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/notion/webhook?all=true",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
