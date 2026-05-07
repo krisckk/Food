@@ -2,7 +2,7 @@ export default function Loading() {
   return (
     <div className="h-screen bg-cafe-bg text-cafe-text flex flex-col overflow-hidden">
       <header className="bg-cafe-bar px-4 py-2 flex items-center justify-center shrink-0">
-        <span className="font-semibold text-lg text-white">烹飪社 x 雄友會</span>
+        <span className="font-semibold text-lg text-white">雄友會</span>
       </header>
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden">

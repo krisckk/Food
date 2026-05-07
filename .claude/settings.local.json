@@ -17,7 +17,14 @@
       "Bash(git commit *)",
       "Bash(Get-ChildItem *)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(Select-String \"next\\\\.config|next\\\\.config\\\\.ts|next\\\\.config\\\\.js\")",
+      "Read(//mnt/c/Code/**)",
+      "Bash(dir \"C:\\\\Code\\\\KrisFood\")",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(git merge *)",
+      "Bash(git *)"
     ]
   }
 }
