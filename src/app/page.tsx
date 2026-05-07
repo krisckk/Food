@@ -2,6 +2,7 @@ import { getMenu } from '@/lib/getMenu'
 import MenuGrid from '@/components/MenuGrid'
 import CartPanel from '@/components/CartPanel'
 import MobileCartSheet from '@/components/MobileCartSheet'
+import LocaleToggle from '@/components/LocaleToggle'
 
 export const revalidate = 60
 
@@ -10,8 +11,10 @@ export default async function Home() {
 
   return (
     <div className="h-screen bg-cafe-bg text-cafe-text flex flex-col overflow-hidden">
-      <header className="bg-cafe-bar text-white px-4 py-2 flex items-center justify-center shrink-0 z-20">
+      <header className="bg-cafe-bar text-white px-4 py-2 flex items-center justify-between shrink-0 z-20">
+        <div className="w-16" aria-hidden />
         <span className="font-semibold text-lg">雄友會</span>
+        <LocaleToggle />
       </header>
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden">

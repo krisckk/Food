@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useCart } from '@/context/CartContext'
+import { useLocale } from '@/context/LocaleContext'
 import CartPanel from './CartPanel'
 
 export default function MobileCartSheet() {
   const [open, setOpen] = useState(false)
   const { items, total } = useCart()
+  const { t } = useLocale()
   const itemCount = items.reduce((n, i) => n + i.quantity, 0)
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export default function MobileCartSheet() {
         type="button"
         onClick={() => setOpen(true)}
         className="md:hidden w-full shrink-0 bg-cafe-bar text-white flex items-center justify-between px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_14px_rgba(0,0,0,0.12)] active:opacity-90"
-        aria-label={`開啟購物車，${itemCount} 件，總計 $${total}`}
+        aria-label={t('cart.openCart', { count: itemCount, total })}
       >
         <span className="flex items-center gap-3">
           <span className="relative inline-flex w-7 h-7 items-center justify-center">
@@ -40,12 +42,12 @@ export default function MobileCartSheet() {
             )}
           </span>
           <span className="font-medium text-sm">
-            {itemCount === 0 ? '購物車是空的' : `${itemCount} 件商品`}
+            {itemCount === 0 ? t('cart.empty') : t('cart.itemCount', { count: itemCount })}
           </span>
         </span>
         <span className="flex items-center gap-3">
           <span className="font-bold tabular-nums text-base">${total}</span>
-          <span className="bg-white/20 rounded-full px-3 py-1.5 text-xs font-medium">查看 →</span>
+          <span className="bg-white/20 rounded-full px-3 py-1.5 text-xs font-medium">{t('cart.viewCart')}</span>
         </span>
       </button>
 
@@ -59,14 +61,14 @@ export default function MobileCartSheet() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="購物車"
+            aria-label={t('cart.cartTitle')}
             className="absolute inset-x-0 bottom-0 top-14 bg-cafe-panel rounded-t-2xl flex flex-col overflow-hidden shadow-xl"
           >
             <div className="flex items-center justify-between px-4 py-2 border-b border-cafe-border shrink-0">
-              <span className="font-medium text-cafe-text">購物車</span>
+              <span className="font-medium text-cafe-text">{t('cart.cartTitle')}</span>
               <button
                 onClick={() => setOpen(false)}
-                aria-label="關閉購物車"
+                aria-label={t('cart.closeCart')}
                 className="w-10 h-10 -mr-2 flex items-center justify-center text-cafe-text/60 hover:text-cafe-text text-xl"
               >
                 ✕

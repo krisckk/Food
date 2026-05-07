@@ -21,9 +21,9 @@ describe('GET /api/menu', () => {
   it('returns 200 with items grouped by category', async () => {
     mockOrder.mockResolvedValue({
       data: [
-        { id: '1', name: 'Pizza', category: 'main', price: 12.99, available: true, description: null, image_url: null, created_at: '' },
-        { id: '2', name: 'Salad', category: 'starter', price: 8.99, available: true, description: null, image_url: null, created_at: '' },
-        { id: '3', name: 'Soup', category: 'starter', price: 6.99, available: true, description: null, image_url: null, created_at: '' },
+        { id: '1', name: 'Pizza', category: 'main', price: 12.99, available: true, description: null, image_url: null, created_at: '', name_en: null, description_en: null, category_en: null, customization_options: null, customization_options_en: null },
+        { id: '2', name: 'Salad', category: 'starter', price: 8.99, available: true, description: null, image_url: null, created_at: '', name_en: null, description_en: null, category_en: null, customization_options: null, customization_options_en: null },
+        { id: '3', name: 'Soup', category: 'starter', price: 6.99, available: true, description: null, image_url: null, created_at: '', name_en: null, description_en: null, category_en: null, customization_options: null, customization_options_en: null },
       ],
       error: null,
     })

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart, cartItemKey } from '@/context/CartContext'
+import { useLocale } from '@/context/LocaleContext'
 import type { CartItem } from '@/context/CartContext'
 
 type LastOrder = {
@@ -17,14 +18,15 @@ export default function CartPanel() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { t } = useLocale()
 
   async function handleCheckout() {
     if (!customerName.trim()) {
-      setError('請輸入姓名')
+      setError(t('cart.nameRequired'))
       return
     }
     if (items.length === 0) {
-      setError('購物車是空的')
+      setError(t('cart.empty'))
       return
     }
 
@@ -49,7 +51,7 @@ export default function CartPanel() {
 
       if (!res.ok) {
         const data = await res.json() as { error?: string }
-        throw new Error(data.error ?? '訂單失敗，請重試')
+        throw new Error(data.error ?? t('cart.orderFailed'))
       }
 
       const { order } = await res.json() as { order: { id: string } }
@@ -59,7 +61,7 @@ export default function CartPanel() {
       clearCart()
       router.push(`/order/${order.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '訂單失敗，請重試')
+      setError(err instanceof Error ? err.message : t('cart.orderFailed'))
     } finally {
       setLoading(false)
     }
@@ -70,7 +72,7 @@ export default function CartPanel() {
       <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-8 gap-3">
-            <p className="text-cafe-text/50 text-sm">購物車是空的</p>
+            <p className="text-cafe-text/50 text-sm">{t('cart.empty')}</p>
           </div>
         ) : (
           items.map(item => {
@@ -93,7 +95,7 @@ export default function CartPanel() {
                   <button
                     onClick={() => updateQuantity(key, item.quantity - 1)}
                     className="w-9 h-9 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-base leading-none hover:bg-cafe-bar hover:text-white transition-colors"
-                    aria-label="減少數量"
+                    aria-label={t('cart.decreaseQty')}
                   >
                     −
                   </button>
@@ -103,7 +105,7 @@ export default function CartPanel() {
                   <button
                     onClick={() => updateQuantity(key, item.quantity + 1)}
                     className="w-9 h-9 rounded-full border border-cafe-bar text-cafe-bar flex items-center justify-center text-base leading-none hover:bg-cafe-bar hover:text-white transition-colors"
-                    aria-label="增加數量"
+                    aria-label={t('cart.increaseQty')}
                   >
                     +
                   </button>
@@ -114,7 +116,7 @@ export default function CartPanel() {
                 <button
                   onClick={() => removeItem(key)}
                   className="text-cafe-text/40 hover:text-red-500 transition-colors shrink-0 w-9 h-9 -mr-2 flex items-center justify-center text-lg"
-                  aria-label={`移除 ${item.name}`}
+                  aria-label={t('cart.removeItem', { name: item.name })}
                 >
                   ×
                 </button>
@@ -127,13 +129,13 @@ export default function CartPanel() {
       <div className="border-t border-cafe-border px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] space-y-3 shrink-0">
         <input
           type="text"
-          placeholder="顧客姓名（必填）"
+          placeholder={t('cart.namePlaceholder')}
           value={customerName}
           onChange={e => setCustomerName(e.target.value)}
           className="w-full border border-cafe-border rounded-md px-3 py-2 text-sm bg-cafe-card text-cafe-text placeholder:text-cafe-text/40 focus:outline-none focus:ring-2 focus:ring-cafe-bar"
         />
         <div className="flex items-center justify-between">
-          <span className="text-cafe-text font-medium text-sm">總計</span>
+          <span className="text-cafe-text font-medium text-sm">{t('cart.total')}</span>
           <span className="text-cafe-bar font-bold tabular-nums">${total}</span>
         </div>
         {error && <p className="text-red-500 text-xs">{error}</p>}
@@ -142,7 +144,7 @@ export default function CartPanel() {
           disabled={loading || items.length === 0}
           className="w-full bg-cafe-bar text-white py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? '處理中...' : '結帳'}
+          {loading ? t('cart.processing') : t('cart.checkout')}
         </button>
       </div>
     </div>

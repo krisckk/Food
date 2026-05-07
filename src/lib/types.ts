@@ -47,6 +47,7 @@ export type Database = {
           id: string
           menu_item_id: string
           name: string
+          name_en: string | null
           price_delta: number
         }
         Insert: {
@@ -56,6 +57,7 @@ export type Database = {
           id?: string
           menu_item_id: string
           name: string
+          name_en?: string | null
           price_delta?: number
         }
         Update: {
@@ -65,6 +67,7 @@ export type Database = {
           id?: string
           menu_item_id?: string
           name?: string
+          name_en?: string | null
           price_delta?: number
         }
         Relationships: []
@@ -73,34 +76,46 @@ export type Database = {
         Row: {
           available: boolean
           category: string
+          category_en: string | null
           created_at: string
           customization_options: Json | null
+          customization_options_en: Json | null
           description: string | null
+          description_en: string | null
           id: string
           image_url: string | null
           name: string
+          name_en: string | null
           price: number
         }
         Insert: {
           available?: boolean
           category: string
+          category_en?: string | null
           created_at?: string
           customization_options?: Json | null
+          customization_options_en?: Json | null
           description?: string | null
+          description_en?: string | null
           id?: string
           image_url?: string | null
           name: string
+          name_en?: string | null
           price: number
         }
         Update: {
           available?: boolean
           category?: string
+          category_en?: string | null
           created_at?: string
           customization_options?: Json | null
+          customization_options_en?: Json | null
           description?: string | null
+          description_en?: string | null
           id?: string
           image_url?: string | null
           name?: string
+          name_en?: string | null
           price?: number
         }
         Relationships: []

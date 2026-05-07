@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
+import { useLocale } from '@/context/LocaleContext'
 import type { MenuByCategory, MenuItem } from '@/lib/getMenu'
+import type { Json } from '@/lib/types'
 
 type CustomizationOption = string | { label: string; price_delta: number }
 type CustomizationGroup = { name: string; required?: boolean; multiple?: boolean; options: CustomizationOption[] }
@@ -12,12 +14,12 @@ type CustomizationOptions = { groups: CustomizationGroup[] }
 const optLabel = (o: CustomizationOption) => (typeof o === 'string' ? o : o.label)
 const optDelta = (o: CustomizationOption) => (typeof o === 'string' ? 0 : o.price_delta)
 
-function getCustomGroups(item: MenuItem): CustomizationGroup[] {
-  return (item.customization_options as CustomizationOptions | null)?.groups ?? []
+function parseCustomGroups(opts: Json | null): CustomizationGroup[] {
+  return (opts as CustomizationOptions | null)?.groups ?? []
 }
 
 function hasCustomization(item: MenuItem): boolean {
-  return getCustomGroups(item).length > 0 || item.modifiers.length > 0
+  return parseCustomGroups(item.customization_options).length > 0 || item.modifiers.length > 0
 }
 
 export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
@@ -25,6 +27,7 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
   const [activeCategory, setActiveCategory] = useState(categories[0] ?? '')
   const [customizing, setCustomizing] = useState<MenuItem | null>(null)
   const { items, addItem } = useCart()
+  const { locale, t } = useLocale()
 
   // Sum quantities across all modifier variants of the same base item for the badge
   const cartQtyByBase = new Map<string, number>()
@@ -32,14 +35,21 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
     cartQtyByBase.set(i.menu_item_id, (cartQtyByBase.get(i.menu_item_id) ?? 0) + i.quantity)
   }
 
+  function categoryLabel(cat: string): string {
+    if (locale !== 'en') return cat
+    const firstItem = menu[cat]?.[0]
+    return firstItem?.category_en ?? cat
+  }
+
   function handleAdd(item: MenuItem) {
     if (hasCustomization(item)) {
       setCustomizing(item)
       return
     }
+    const displayName = locale === 'en' && item.name_en ? item.name_en : item.name
     addItem({
       menu_item_id: item.id,
-      name: item.name,
+      name: displayName,
       unit_price: item.price,
     })
   }
@@ -58,7 +68,7 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
                 active ? 'text-cafe-bar' : 'text-cafe-text/60 hover:text-cafe-text'
               }`}
             >
-              {cat}
+              {categoryLabel(cat)}
               {active && (
                 <span
                   aria-hidden
@@ -75,6 +85,8 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
         {(menu[activeCategory] ?? []).map((item, index) => {
           const qty = cartQtyByBase.get(item.id) ?? 0
           const customizable = hasCustomization(item)
+          const displayName = locale === 'en' && item.name_en ? item.name_en : item.name
+          const displayDesc = locale === 'en' && item.description_en ? item.description_en : item.description
           return (
             <div
               key={item.id}
@@ -84,7 +96,7 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
                 <div className="relative aspect-[4/3] w-full">
                   <Image
                     src={item.image_url}
-                    alt={item.name}
+                    alt={displayName}
                     fill
                     sizes="(max-width: 768px) 50vw, 33vw"
                     className="object-cover"
@@ -95,17 +107,17 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
                 </div>
               ) : (
                 <div className="aspect-[4/3] bg-cafe-border flex items-center justify-center text-cafe-text/30 text-xs">
-                  無圖片
+                  {t('menu.noImage')}
                 </div>
               )}
 
               <div className="p-2 flex flex-col flex-1">
-                <p className="text-cafe-text font-medium text-sm leading-snug line-clamp-2">{item.name}</p>
-                {item.description && (
-                  <p className="text-cafe-text/60 text-xs mt-0.5 leading-snug line-clamp-2">{item.description}</p>
+                <p className="text-cafe-text font-medium text-sm leading-snug line-clamp-2">{displayName}</p>
+                {displayDesc && (
+                  <p className="text-cafe-text/60 text-xs mt-0.5 leading-snug line-clamp-2">{displayDesc}</p>
                 )}
                 {customizable && (
-                  <p className="text-cafe-text/50 text-[11px] mt-1">可客製</p>
+                  <p className="text-cafe-text/50 text-[11px] mt-1">{t('menu.customizable')}</p>
                 )}
 
                 <div className="mt-auto pt-2 flex items-center justify-between">
@@ -114,7 +126,7 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
                     <button
                       onClick={() => handleAdd(item)}
                       className="bg-cafe-bar text-white rounded-full w-11 h-11 flex items-center justify-center text-2xl leading-none hover:opacity-90 transition-opacity"
-                      aria-label={`加入 ${item.name}`}
+                      aria-label={t('menu.addToCart', { name: displayName })}
                     >
                       +
                     </button>
@@ -163,7 +175,14 @@ function CustomizationSheet({
   onClose: () => void
   onConfirm: (payload: ConfirmPayload) => void
 }) {
-  const groups = getCustomGroups(item)
+  const { locale, t } = useLocale()
+
+  const displayName = locale === 'en' && item.name_en ? item.name_en : item.name
+  const optsJson = locale === 'en'
+    ? (item.customization_options_en ?? item.customization_options)
+    : item.customization_options
+  const groups = parseCustomGroups(optsJson)
+
   const [customizations, setCustomizations] = useState<Record<string, string[]>>(() => {
     const initial: Record<string, string[]> = {}
     for (const g of groups) {
@@ -200,12 +219,12 @@ function CustomizationSheet({
 
     onConfirm({
       menu_item_id: item.id,
-      name: item.name,
+      name: displayName,
       unit_price: item.price + customizationDelta,
       modifier: selectedModifier
         ? {
             id: selectedModifier.id,
-            name: selectedModifier.name,
+            name: locale === 'en' && selectedModifier.name_en ? selectedModifier.name_en : selectedModifier.name,
             price_delta: Number(selectedModifier.price_delta),
           }
         : undefined,
@@ -215,14 +234,19 @@ function CustomizationSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={`客製 ${item.name}`}>
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('customization.title', { name: displayName })}
+    >
       <div onClick={onClose} className="absolute inset-0 bg-black/40" aria-hidden />
       <div className="relative w-full md:max-w-md bg-cafe-card rounded-t-2xl md:rounded-2xl md:mb-8 max-h-[85vh] flex flex-col shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-cafe-border shrink-0">
-          <span className="font-semibold text-cafe-text">{item.name}</span>
+          <span className="font-semibold text-cafe-text">{displayName}</span>
           <button
             onClick={onClose}
-            aria-label="關閉"
+            aria-label={t('customization.close')}
             className="w-10 h-10 -mr-2 flex items-center justify-center text-cafe-text/60 hover:text-cafe-text text-xl"
           >
             ✕
@@ -239,7 +263,7 @@ function CustomizationSheet({
               <div className="flex flex-wrap gap-2">
                 {!group.required && (
                   <OptionChip
-                    label={`不選${group.name}`}
+                    label={t('customization.noSelection', { group: group.name })}
                     selected={!(customizations[group.name]?.length)}
                     onClick={() =>
                       setCustomizations(prev => ({ ...prev, [group.name]: [] }))
@@ -273,21 +297,24 @@ function CustomizationSheet({
 
           {item.modifiers.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-cafe-text/70 mb-2">加料</p>
+              <p className="text-xs font-medium text-cafe-text/70 mb-2">{t('customization.addOns')}</p>
               <div className="flex flex-wrap gap-2">
                 <OptionChip
-                  label="不加料"
+                  label={t('customization.noAddOns')}
                   selected={modifierId === ''}
                   onClick={() => setModifierId('')}
                 />
-                {item.modifiers.map(mod => (
-                  <OptionChip
-                    key={mod.id}
-                    label={`${mod.name} +$${mod.price_delta}`}
-                    selected={modifierId === mod.id}
-                    onClick={() => setModifierId(mod.id)}
-                  />
-                ))}
+                {item.modifiers.map(mod => {
+                  const modName = locale === 'en' && mod.name_en ? mod.name_en : mod.name
+                  return (
+                    <OptionChip
+                      key={mod.id}
+                      label={`${modName} +$${mod.price_delta}`}
+                      selected={modifierId === mod.id}
+                      onClick={() => setModifierId(mod.id)}
+                    />
+                  )
+                })}
               </div>
             </div>
           )}
@@ -298,7 +325,7 @@ function CustomizationSheet({
             onClick={handleConfirm}
             className="w-full bg-cafe-bar text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
           >
-            <span>加入購物車</span>
+            <span>{t('customization.addToCartBtn')}</span>
             <span className="tabular-nums">${totalPrice}</span>
           </button>
         </div>
