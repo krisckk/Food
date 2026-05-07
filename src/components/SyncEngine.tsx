@@ -14,7 +14,7 @@ export default function SyncEngine() {
       isSyncing.current = true
       try {
         await fetch('/api/notion/webhook?all=true')
-      } catch (err) {
+      } catch {
         // Silent fail
       } finally {
         isSyncing.current = false

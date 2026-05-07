@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { updateSummaryStatus, STATUS_PROGRESSION } from './notion'
+import { updateSummaryStatus } from './notion'
 
 // Mock environment variables
 process.env.NOTION_API_TOKEN = 'test-token'
@@ -41,13 +41,13 @@ describe('updateSummaryStatus', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ results: mockResults }),
-    } as any)
+    } as unknown as Response)
 
     // 2. Mock Update Response
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: 'summary-id' }),
-    } as any)
+    } as unknown as Response)
 
     const result = await updateSummaryStatus('order-123')
 
@@ -84,7 +84,7 @@ describe('updateSummaryStatus', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ results: mockResults }),
-    } as any)
+    } as unknown as Response)
 
     const result = await updateSummaryStatus('order-123')
 
@@ -96,7 +96,7 @@ describe('updateSummaryStatus', () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ results: [] }),
-    } as any)
+    } as unknown as Response)
 
     const result = await updateSummaryStatus('order-empty')
     expect(result).toBeNull()

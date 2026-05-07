@@ -8,6 +8,14 @@ type OrderItem = Pick<Tables<'order_items'>, 'menu_item_id' | 'quantity' | 'unit
 export const STATUS_PROGRESSION = ['已點餐', '已付款', '已做完', '已送達', 'Done'] as const
 export type OrderStatus = (typeof STATUS_PROGRESSION)[number]
 
+type NotionStatusProp = {
+  type?: string
+  checkbox?: boolean
+  select?: { name: string }
+  status?: { name: string }
+}
+type NotionPageResult = { id: string; properties: Record<string, NotionStatusProp | undefined> }
+
 async function createNotionPage(
   token: string,
   databaseId: string,
@@ -116,7 +124,7 @@ export async function updateSummaryStatus(orderId: string): Promise<string | nul
     throw new Error(`Notion Query error ${queryRes.status}: ${text}`)
   }
 
-  const { results } = (await queryRes.json()) as { results: any[] }
+  const { results } = (await queryRes.json()) as { results: NotionPageResult[] }
   if (results.length === 0) return null
 
   const summaryPage = results.find((p) => p.properties['Is Summary']?.checkbox === true)

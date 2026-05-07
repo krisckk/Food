@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart, cartItemKey } from '@/context/CartContext'
 import type { CartItem } from '@/context/CartContext'
@@ -17,17 +16,7 @@ export default function CartPanel() {
   const [customerName, setCustomerName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastOrder, setLastOrder] = useState<LastOrder | null>(null)
   const router = useRouter()
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('lastOrder')
-      if (stored) setLastOrder(JSON.parse(stored) as LastOrder)
-    } catch {
-      // ignore malformed localStorage
-    }
-  }, [])
 
   async function handleCheckout() {
     if (!customerName.trim()) {
@@ -65,7 +54,6 @@ export default function CartPanel() {
 
       const orderRecord: LastOrder = { orderId: order.id, items: [...items], total }
       localStorage.setItem('lastOrder', JSON.stringify(orderRecord))
-      setLastOrder(orderRecord)
       clearCart()
       router.push(`/order/${order.id}`)
     } catch (err) {
