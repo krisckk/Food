@@ -17,7 +17,7 @@ insert into public.menu_items (name, description, price, category, image_url) va
   ('巴斯克蛋糕 原味',     null,                       70, '創新', '/images/創新/原味巴斯克蛋糕.jpg'),
   ('巴斯克蛋糕 巧克力',   null,                       75, '創新', '/images/創新/巧克力巴斯克蛋糕.jpg'),
   ('曲奇',               null,                       30, '創新', '/images/創新/原味曲奇.jpg'),
-  ('脆皮原味蛋糕',        null,                       30, '創新', '/images/創新/脆皮原味蛋糕.jpg'),
+  ('脆皮蛋糕',            null,                       30, '創新', '/images/創新/脆皮原味蛋糕.jpg'),
   ('費南雪',              null,                       45, '創新', '/images/創新/費南雪.jpg'),
 
   -- 冰物 (Cold)
@@ -58,3 +58,8 @@ where name = '海苔飯卷';
 update public.menu_items
 set customization_options = '{"groups":[{"name":"口味","required":true,"options":[{"label":"巧克力脆脆","price_delta":0},{"label":"皮蛋肉鬆","price_delta":10}]}]}'::jsonb
 where name = '熱壓吐司';
+
+-- Customization group for 脆皮蛋糕 (口味 required, 開心果 +10)
+update public.menu_items
+set customization_options = '{"groups":[{"name":"口味","required":true,"options":[{"label":"原味","price_delta":0},{"label":"開心果","price_delta":10},{"label":"巧克力","price_delta":0}]}]}'::jsonb
+where name = '脆皮蛋糕';
