@@ -16,7 +16,8 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(Get-ChildItem *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(git stash *)"
     ]
   }
 }

@@ -43,11 +43,18 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
     return () => clearInterval(interval)
   }, [params.id])
 
+  const statusTone =
+    status === 'Done' || status === '完成'
+      ? 'bg-green-100 text-green-700'
+      : status === 'Preparing' || status === '製作中'
+        ? 'bg-amber-100 text-amber-700'
+        : 'bg-cafe-bar/10 text-cafe-bar'
+
   return (
     <div className="min-h-screen bg-cafe-bg flex items-center justify-center p-4">
-      <div className="bg-cafe-card border border-cafe-border rounded-xl p-8 max-w-md w-full space-y-6">
+      <div className="bg-cafe-card border border-cafe-border rounded-xl p-6 max-w-md w-full space-y-5">
         <div className="text-center">
-          <div className="inline-block bg-cafe-bar/10 text-cafe-bar px-3 py-1 rounded-full text-xs font-bold mb-4">
+          <div className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-4 ${statusTone}`}>
             狀態：{status}
           </div>
           <h1 className="text-2xl font-bold text-cafe-text">訂單已送出！🎉</h1>
