@@ -3,6 +3,8 @@ import MenuGrid from '@/components/MenuGrid'
 import CartPanel from '@/components/CartPanel'
 import MobileCartSheet from '@/components/MobileCartSheet'
 
+export const revalidate = 60
+
 export default async function Home() {
   const menu = await getMenu()
 

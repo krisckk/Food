@@ -68,7 +68,7 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
 
       {/* Food grid */}
       <div className="grid grid-cols-2 gap-3 p-3">
-        {(menu[activeCategory] ?? []).map(item => {
+        {(menu[activeCategory] ?? []).map((item, index) => {
           const qty = cartQtyByBase.get(item.id) ?? 0
           const customizable = hasCustomization(item)
           return (
@@ -84,6 +84,9 @@ export default function MenuGrid({ menu }: { menu: MenuByCategory }) {
                     fill
                     sizes="(max-width: 768px) 50vw, 33vw"
                     className="object-cover"
+                    priority={index < 4}
+                    placeholder="blur"
+                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSIzIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjMiIGZpbGw9IiNlNWUwZGIiLz48L3N2Zz4="
                   />
                 </div>
               ) : (

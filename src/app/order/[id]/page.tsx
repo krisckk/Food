@@ -26,20 +26,20 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
     clearCart()
   }, [clearCart])
 
-  // Automatic background sync every 10 seconds
+  // Poll Supabase for status updates every 10 seconds
   useEffect(() => {
     const sync = async () => {
       try {
-        const res = await fetch(`/api/notion/webhook?orderId=${params.id}`)
-        const data = await res.json()
+        const res = await fetch(`/api/orders/${params.id}`)
+        const data = await res.json() as { status?: string }
         if (data.status) setStatus(data.status)
-      } catch (err) {
-        console.error('Auto-sync failed', err)
+      } catch {
+        // silent — status will update on next poll
       }
     }
 
-    sync() // Immediate sync on load
-    const interval = setInterval(sync, 10000) // Poll every 10s
+    sync()
+    const interval = setInterval(sync, 10000)
     return () => clearInterval(interval)
   }, [params.id])
 
