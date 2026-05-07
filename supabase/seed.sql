@@ -27,8 +27,7 @@ insert into public.menu_items (name, description, price, category, image_url) va
   -- 冰物 (Cold)
   ('雪花冰',              null,                       60, '冰物', '/images/ice/3.jpg'),
   ('愛玉冬瓜檸檬',        null,                       35, '冰物', '/images/ice/2.jpg'),
-  ('仙草凍',                null,                       45, '冰物', '/images/ice/1.jpg'),
-  ('芋頭西米露',          null,                       10, '冰物', null);
+  ('仙草凍',                null,                       45, '冰物', '/images/ice/1.jpg');
 
 -- Modifiers for 台式肉燥飯
 insert into public.menu_item_modifiers (menu_item_id, name, price_delta, display_order)
