@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useCart, cartItemKey } from '@/context/CartContext'
 import type { CartItem } from '@/context/CartContext'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
+import SyncEngine from '@/components/SyncEngine'
 
 type LastOrder = {
   orderId: string
@@ -26,21 +28,32 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
     clearCart()
   }, [clearCart])
 
-  // Poll Supabase for status updates every 10 seconds
+  // Initial fetch + Supabase Realtime for instant status updates
   useEffect(() => {
-    const sync = async () => {
-      try {
-        const res = await fetch(`/api/orders/${params.id}`)
-        const data = await res.json() as { status?: string }
-        if (data.status) setStatus(data.status)
-      } catch {
-        // silent — status will update on next poll
-      }
-    }
+    const supabase = createSupabaseBrowserClient()
 
-    sync()
-    const interval = setInterval(sync, 10000)
-    return () => clearInterval(interval)
+    fetch(`/api/orders/${params.id}`)
+      .then(r => r.json())
+      .then((d: { status?: string }) => {
+        if (d.status) setStatus(d.status)
+      })
+      .catch(() => {})
+
+    const channel = supabase
+      .channel(`order-${params.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${params.id}` },
+        (payload) => {
+          const next = (payload.new as { status?: string }).status
+          if (next) setStatus(next)
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [params.id])
 
   const statusTone =
@@ -52,6 +65,7 @@ export default function OrderConfirmation({ params }: { params: { id: string } }
 
   return (
     <div className="min-h-screen bg-cafe-bg flex items-center justify-center p-4">
+      <SyncEngine />
       <div className="bg-cafe-card border border-cafe-border rounded-xl p-6 max-w-md w-full space-y-5">
         <div className="text-center">
           <div className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-4 ${statusTone}`}>

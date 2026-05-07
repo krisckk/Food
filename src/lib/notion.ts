@@ -87,10 +87,12 @@ export async function syncOrderToNotion(
     byCategory.get(cat)!.push(item)
   })
 
-  for (const [category, catItems] of Array.from(byCategory)) {
-    const subtotal = catItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
-    await createNotionPage(token, databaseId, order, catItems, [category], subtotal, false)
-  }
+  await Promise.all(
+    Array.from(byCategory).map(([category, catItems]) => {
+      const subtotal = catItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
+      return createNotionPage(token, databaseId, order, catItems, [category], subtotal, false)
+    }),
+  )
 
   return masterPageId
 }

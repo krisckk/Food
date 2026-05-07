@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
-import SyncEngine from "@/components/SyncEngine";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,7 +31,6 @@ export default function RootLayout({
       >
         <CartProvider>
           {children}
-          <SyncEngine />
         </CartProvider>
       </body>
     </html>
