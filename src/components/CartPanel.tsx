@@ -41,6 +41,8 @@ export default function CartPanel() {
             menu_item_id: i.menu_item_id,
             quantity: i.quantity,
             modifier_id: i.modifier?.id ?? null,
+            customization_note: i.customization_note ?? null,
+            customization_price_delta: i.customization_price_delta ?? 0,
           })),
         }),
       })

@@ -12,9 +12,10 @@ export type CartItem = {
   menu_item_id: string
   name: string
   quantity: number
-  unit_price: number          // base price only
+  unit_price: number
   modifier?: CartItemModifier
-  customization_note?: string // e.g. "牛奶 / 湯圓" — informational, no price impact
+  customization_note?: string
+  customization_price_delta?: number
 }
 
 export function cartItemKey(item: Pick<CartItem, 'menu_item_id' | 'modifier' | 'customization_note'>): string {

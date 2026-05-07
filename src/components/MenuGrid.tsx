@@ -5,8 +5,12 @@ import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import type { MenuByCategory, MenuItem } from '@/lib/getMenu'
 
-type CustomizationGroup = { name: string; required?: boolean; multiple?: boolean; options: string[] }
+type CustomizationOption = string | { label: string; price_delta: number }
+type CustomizationGroup = { name: string; required?: boolean; multiple?: boolean; options: CustomizationOption[] }
 type CustomizationOptions = { groups: CustomizationGroup[] }
+
+const optLabel = (o: CustomizationOption) => (typeof o === 'string' ? o : o.label)
+const optDelta = (o: CustomizationOption) => (typeof o === 'string' ? 0 : o.price_delta)
 
 function getCustomGroups(item: MenuItem): CustomizationGroup[] {
   return (item.customization_options as CustomizationOptions | null)?.groups ?? []
@@ -147,6 +151,7 @@ type ConfirmPayload = {
   unit_price: number
   modifier?: { id: string; name: string; price_delta: number }
   customization_note?: string
+  customization_price_delta?: number
 }
 
 function CustomizationSheet({
@@ -162,7 +167,7 @@ function CustomizationSheet({
   const [customizations, setCustomizations] = useState<Record<string, string[]>>(() => {
     const initial: Record<string, string[]> = {}
     for (const g of groups) {
-      initial[g.name] = g.required && g.options[0] ? [g.options[0]] : []
+      initial[g.name] = g.required && g.options[0] ? [optLabel(g.options[0])] : []
     }
     return initial
   })
@@ -177,7 +182,15 @@ function CustomizationSheet({
   }, [])
 
   const selectedModifier = item.modifiers.find(m => m.id === modifierId)
-  const totalPrice = item.price + (selectedModifier ? Number(selectedModifier.price_delta) : 0)
+
+  const customizationDelta = groups.reduce((sum, g) => {
+    const selected = customizations[g.name] ?? []
+    return sum + g.options
+      .filter(o => selected.includes(optLabel(o)))
+      .reduce((s, o) => s + optDelta(o), 0)
+  }, 0)
+
+  const totalPrice = item.price + customizationDelta + (selectedModifier ? Number(selectedModifier.price_delta) : 0)
 
   function handleConfirm() {
     const note = groups
@@ -188,7 +201,7 @@ function CustomizationSheet({
     onConfirm({
       menu_item_id: item.id,
       name: item.name,
-      unit_price: item.price,
+      unit_price: item.price + customizationDelta,
       modifier: selectedModifier
         ? {
             id: selectedModifier.id,
@@ -197,6 +210,7 @@ function CustomizationSheet({
           }
         : undefined,
       customization_note: note,
+      customization_price_delta: customizationDelta || undefined,
     })
   }
 
@@ -232,23 +246,27 @@ function CustomizationSheet({
                     }
                   />
                 )}
-                {group.options.map(opt => (
-                  <OptionChip
-                    key={opt}
-                    label={opt}
-                    selected={customizations[group.name]?.includes(opt) ?? false}
-                    onClick={() =>
-                      setCustomizations(prev => {
-                        if (group.multiple) {
-                          const cur = prev[group.name] ?? []
-                          const next = cur.includes(opt) ? cur.filter(o => o !== opt) : [...cur, opt]
-                          return { ...prev, [group.name]: next }
-                        }
-                        return { ...prev, [group.name]: [opt] }
-                      })
-                    }
-                  />
-                ))}
+                {group.options.map(opt => {
+                  const label = optLabel(opt)
+                  const delta = optDelta(opt)
+                  return (
+                    <OptionChip
+                      key={label}
+                      label={delta > 0 ? `${label} +$${delta}` : label}
+                      selected={customizations[group.name]?.includes(label) ?? false}
+                      onClick={() =>
+                        setCustomizations(prev => {
+                          if (group.multiple) {
+                            const cur = prev[group.name] ?? []
+                            const next = cur.includes(label) ? cur.filter(o => o !== label) : [...cur, label]
+                            return { ...prev, [group.name]: next }
+                          }
+                          return { ...prev, [group.name]: [label] }
+                        })
+                      }
+                    />
+                  )
+                })}
               </div>
             </div>
           ))}

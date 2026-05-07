@@ -12,7 +12,8 @@ const schema = z.object({
         menu_item_id: z.string().uuid(),
         quantity: z.number().int().positive(),
         modifier_id: z.string().uuid().nullable().optional(),
-        customization_note: z.string().max(500).optional(),
+        customization_note: z.string().max(500).nullable().optional(),
+        customization_price_delta: z.number().int().min(0).max(9999).optional(),
       }),
     )
     .min(1),
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
 
   const total = items.reduce((sum, i) => {
     const base = priceMap.get(i.menu_item_id)!.price
-    const delta = i.modifier_id ? (modifierMap.get(i.modifier_id)?.price_delta ?? 0) : 0
+    const delta = (i.modifier_id ? (modifierMap.get(i.modifier_id)?.price_delta ?? 0) : 0)
+               + (i.customization_price_delta ?? 0)
     return sum + (base + delta) * i.quantity
   }, 0)
 
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
         order_id: order.id,
         menu_item_id: i.menu_item_id,
         quantity: i.quantity,
-        unit_price: base + (mod?.price_delta ?? 0),
+        unit_price: base + (mod?.price_delta ?? 0) + (i.customization_price_delta ?? 0),
         modifier_id: i.modifier_id ?? null,
         modifier_name: mod?.name ?? null,
         customization_note: i.customization_note ?? null,
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
             return parts.join(' ')
           })(),
           quantity: i.quantity,
-          unit_price: priceMap.get(i.menu_item_id)!.price + (mod?.price_delta ?? 0),
+          unit_price: priceMap.get(i.menu_item_id)!.price + (mod?.price_delta ?? 0) + (i.customization_price_delta ?? 0),
         }
       }),
       items.map((i) => priceMap.get(i.menu_item_id)!.category),

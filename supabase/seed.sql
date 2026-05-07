@@ -1,11 +1,8 @@
 -- Dev seed data — real menu
 insert into public.menu_items (name, description, price, category, image_url) values
   -- 烤物 (Grilled)
-  ('海苔飯卷 日式鮪魚沙拉', null,                      65, '烤物', '/images/grill/2.jpg'),
-  ('海苔飯卷 古早味肉香',   null,                      65, '烤物', '/images/grill/2.jpg'),
-  ('海苔飯卷 kimchi豬肉',   null,                      75, '烤物', '/images/grill/2.jpg'),
-  ('熱壓吐司 皮蛋肉鬆',    null,                      60, '烤物', '/images/grill/3.jpg'),
-  ('熱壓吐司 巧克力脆脆',  null,                      50, '烤物', null),
+  ('海苔飯卷',             null,                      65, '烤物', '/images/grill/2.jpg'),
+  ('熱壓吐司',             null,                      50, '烤物', '/images/grill/3.jpg'),
   ('台式肉燥飯',           '含油豆腐',                 50, '烤物', '/images/grill/1.jpg'),
 
   -- 創新 (Desserts)
@@ -51,3 +48,13 @@ where name = '雪花冰';
 update public.menu_items
 set customization_options = '{"groups":[{"name":"口味","required":true,"options":["原味","巧克力"]}]}'::jsonb
 where name = '曲奇';
+
+-- Customization group for 海苔飯卷 (口味 required, per-option price)
+update public.menu_items
+set customization_options = '{"groups":[{"name":"口味","required":true,"options":[{"label":"古早味肉香","price_delta":0},{"label":"日式鮪魚沙拉","price_delta":0},{"label":"kimchi豬肉","price_delta":10}]}]}'::jsonb
+where name = '海苔飯卷';
+
+-- Customization group for 熱壓吐司 (口味 required, per-option price)
+update public.menu_items
+set customization_options = '{"groups":[{"name":"口味","required":true,"options":[{"label":"巧克力脆脆","price_delta":0},{"label":"皮蛋肉鬆","price_delta":10}]}]}'::jsonb
+where name = '熱壓吐司';
