@@ -19,8 +19,7 @@ insert into public.menu_items (name, description, price, category, image_url) va
   ('葡式蛋撻',            null,                       45, '創新', null),
   ('巴斯克蛋糕 原味',     null,                       70, '創新', '/images/創新/原味巴斯克蛋糕.jpg'),
   ('巴斯克蛋糕 巧克力',   null,                       75, '創新', '/images/創新/巧克力巴斯克蛋糕.jpg'),
-  ('曲奇 原味',           null,                       30, '創新', '/images/創新/原味曲奇.jpg'),
-  ('曲奇 巧克力',         null,                       30, '創新', null),
+  ('曲奇',               null,                       30, '創新', '/images/創新/原味曲奇.jpg'),
   ('脆皮原味蛋糕',        null,                       30, '創新', '/images/創新/脆皮原味蛋糕.jpg'),
   ('費南雪',              null,                       45, '創新', '/images/創新/費南雪.jpg'),
 
@@ -47,3 +46,8 @@ select id, '體驗手搓愛玉', 20, 1 from public.menu_items where name = '愛�
 update public.menu_items
 set customization_options = '{"groups":[{"name":"口味","required":true,"options":["牛奶","巧克力"]},{"name":"配料","required":false,"multiple":true,"options":["湯圓","珍珠","脆笛蘇","棉花糖","巧克力碎","煉乳"]}]}'::jsonb
 where name = '雪花冰';
+
+-- Customization group for 曲奇 (口味 required, single-select)
+update public.menu_items
+set customization_options = '{"groups":[{"name":"口味","required":true,"options":["原味","巧克力"]}]}'::jsonb
+where name = '曲奇';
