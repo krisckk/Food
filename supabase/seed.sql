@@ -25,11 +25,10 @@ insert into public.menu_items (name, description, price, category, image_url) va
   ('愛玉冬瓜檸檬',        null,                       35, '冰物', '/images/ice/2.jpg'),
   ('仙草凍',                null,                       45, '冰物', '/images/ice/1.jpg');
 
--- Modifiers for 台式肉燥飯
-insert into public.menu_item_modifiers (menu_item_id, name, price_delta, display_order)
-select id, '加滷蛋',   10, 1 from public.menu_items where name = '台式肉燥飯'
-union all
-select id, '加滷豆乾', 10, 2 from public.menu_items where name = '台式肉燥飯';
+-- Customization group for 台式肉燥飯 (加料 optional, multi-select)
+update public.menu_items
+set customization_options = '{"groups":[{"name":"加料","required":false,"multiple":true,"options":[{"label":"加滷蛋","price_delta":10},{"label":"加滷豆乾","price_delta":10}]}]}'::jsonb
+where name = '台式肉燥飯';
 
 -- Modifier for 雪花冰 (paid add-on; flavor/topping choices are stored via customization_note)
 insert into public.menu_item_modifiers (menu_item_id, name, price_delta, display_order)
