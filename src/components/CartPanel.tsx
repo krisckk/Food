@@ -129,6 +129,7 @@ export default function CartPanel() {
       <div className="border-t border-cafe-border px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] space-y-3 shrink-0">
         <input
           type="text"
+          maxLength={6}
           placeholder={t('cart.namePlaceholder')}
           value={customerName}
           onChange={e => setCustomerName(e.target.value)}
