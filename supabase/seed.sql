@@ -19,6 +19,7 @@ insert into public.menu_items (name, description, price, category, image_url) va
   ('曲奇',               null,                       30, '創新', '/images/創新/原味曲奇.jpg'),
   ('脆皮蛋糕',            null,                       30, '創新', '/images/創新/脆皮原味蛋糕.jpg'),
   ('費南雪',              null,                       45, '創新', '/images/創新/費南雪.jpg'),
+  ('肉鬆小貝',            null,                       35, '創新', '/images/創新/肉鬆小貝.jpg'),
 
   -- 冰物 (Cold)
   ('雪花冰',              null,                       60, '冰物', '/images/ice/3.jpg'),
@@ -62,3 +63,13 @@ where name = '熱壓吐司';
 update public.menu_items
 set customization_options = '{"groups":[{"name":"口味","required":true,"options":[{"label":"原味","price_delta":0},{"label":"開心果","price_delta":10},{"label":"巧克力","price_delta":0}]}]}'::jsonb
 where name = '脆皮蛋糕';
+
+-- Customization group for 肉鬆小貝 (Pack size)
+update public.menu_items
+set 
+  name_en = 'Pork Floss Cake',
+  category_en = 'Desserts',
+  customization_options = '{"groups":[{"name":"數量","required":true,"multiple":false,"options":[{"label":"一顆","price_delta":0},{"label":"四顆","price_delta":85}]}]}'::jsonb,
+  customization_options_en = '{"groups":[{"name":"Pack Size","required":true,"multiple":false,"options":[{"label":"1 pc","price_delta":0},{"label":"4 pcs","price_delta":85}]}]}'::jsonb
+where name = '肉鬆小貝';
+
