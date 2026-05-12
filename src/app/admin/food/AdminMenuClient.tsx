@@ -26,7 +26,7 @@ export default function AdminMenuClient({ initialItems }: { initialItems: MenuIt
     startTransition(async () => {
       try {
         await toggleItemAvailability(id, !currentAvailable)
-      } catch (error) {
+      } catch {
         // If it fails, revert the state to the original
         alert('Failed to update item availability. Please try again.')
         setItems(initialItems)
