@@ -23,11 +23,9 @@ export async function getMenu(): Promise<MenuByCategory> {
     modsByItem.set(mod.menu_item_id, arr)
   }
 
-  const DISPLAY_CATEGORY: Record<string, string> = { '費南雪': '烹飪社' }
-
   return (itemsRes.data ?? []).reduce<MenuByCategory>((acc, item) => {
     const typed: MenuItem = { ...item, modifiers: modsByItem.get(item.id) ?? [] }
-    const displayCat = DISPLAY_CATEGORY[item.name] ?? item.category
+    const displayCat = item.category
     ;(acc[displayCat] ??= []).push(typed)
     return acc
   }, {})
