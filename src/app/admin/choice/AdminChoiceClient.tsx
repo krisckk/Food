@@ -30,7 +30,6 @@ type MenuItemWithCustomizations = {
   name: string
   category: string
   customization_options: { groups: CustomizationGroup[] }
-  customization_options_en: { groups: CustomizationGroup[] } | null
 }
 
 function getOptionLabel(opt: OptionValue): string {
@@ -102,19 +101,16 @@ export default function AdminChoiceClient({
       })
 
     const newOptions = { groups: applyToggle(currentItem.customization_options.groups) }
-    const newOptionsEn = currentItem.customization_options_en
-      ? { groups: applyToggle(currentItem.customization_options_en.groups) }
-      : undefined
 
     setItems(prev => prev.map(item =>
       item.id === itemId
-        ? { ...item, customization_options: newOptions, customization_options_en: newOptionsEn ?? item.customization_options_en }
+        ? { ...item, customization_options: newOptions }
         : item
     ))
 
     startTransition(async () => {
       try {
-        await toggleCustomizationOption(itemId, newOptions, newOptionsEn)
+        await toggleCustomizationOption(itemId, newOptions)
       } catch {
         alert('Failed to update option. Please try again.')
         setItems(initialItems)

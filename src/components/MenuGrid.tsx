@@ -179,10 +179,23 @@ function CustomizationSheet({
   const { locale, t } = useLocale()
 
   const displayName = locale === 'en' && item.name_en ? item.name_en : item.name
-  const optsJson = locale === 'en'
-    ? (item.customization_options_en ?? item.customization_options)
-    : item.customization_options
-  const groups = parseCustomGroups(optsJson)
+  const cnGroups = parseCustomGroups(item.customization_options)
+  const enGroupsRaw = locale === 'en' && item.customization_options_en
+    ? parseCustomGroups(item.customization_options_en)
+    : null
+
+  // EN labels come from customization_options_en; availability always comes from customization_options (CN)
+  const groups = enGroupsRaw
+    ? enGroupsRaw.map((g, gi) => ({
+        ...g,
+        options: g.options.map((opt, oi) => {
+          const cnAvail = optAvailable(cnGroups[gi]?.options[oi] ?? opt)
+          return cnAvail ? opt
+            : typeof opt === 'string' ? { label: opt, price_delta: 0, available: false }
+            : { ...opt, available: false }
+        }),
+      }))
+    : cnGroups
 
   const [customizations, setCustomizations] = useState<Record<string, string[]>>(() => {
     const initial: Record<string, string[]> = {}

@@ -17,7 +17,7 @@ export default async function AdminChoicePage() {
       .select('id, name, category'),
     supabase
       .from('menu_items')
-      .select('id, name, category, customization_options, customization_options_en')
+      .select('id, name, category, customization_options')
       .not('customization_options', 'is', null)
       .order('category')
       .order('name'),
