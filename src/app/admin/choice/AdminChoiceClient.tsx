@@ -85,24 +85,28 @@ export default function AdminChoiceClient({
     optionIndex: number,
     current: boolean,
   ) => {
-    setItems(prev => prev.map(item => {
-      if (item.id !== itemId) return item
-      const groups = item.customization_options.groups.map((g, gi) => {
-        if (gi !== groupIndex) return g
-        const options = g.options.map((opt, oi) => {
-          if (oi !== optionIndex) return opt
-          return typeof opt === 'string'
-            ? { label: opt, available: !current }
-            : { ...opt, available: !current }
-        })
-        return { ...g, options }
+    const currentItem = items.find(item => item.id === itemId)
+    if (!currentItem) return
+
+    const newGroups = currentItem.customization_options.groups.map((g, gi) => {
+      if (gi !== groupIndex) return g
+      const options = g.options.map((opt, oi) => {
+        if (oi !== optionIndex) return opt
+        return typeof opt === 'string'
+          ? { label: opt, available: !current }
+          : { ...opt, available: !current }
       })
-      return { ...item, customization_options: { groups } }
-    }))
+      return { ...g, options }
+    })
+    const newOptions = { groups: newGroups }
+
+    setItems(prev => prev.map(item =>
+      item.id === itemId ? { ...item, customization_options: newOptions } : item
+    ))
 
     startTransition(async () => {
       try {
-        await toggleCustomizationOption(itemId, groupIndex, optionIndex, !current)
+        await toggleCustomizationOption(itemId, newOptions)
       } catch {
         alert('Failed to update option. Please try again.')
         setItems(initialItems)
