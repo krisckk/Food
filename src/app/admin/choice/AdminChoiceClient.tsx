@@ -30,6 +30,7 @@ type MenuItemWithCustomizations = {
   name: string
   category: string
   customization_options: { groups: CustomizationGroup[] }
+  customization_options_en: { groups: CustomizationGroup[] } | null
 }
 
 function getOptionLabel(opt: OptionValue): string {
@@ -88,25 +89,32 @@ export default function AdminChoiceClient({
     const currentItem = items.find(item => item.id === itemId)
     if (!currentItem) return
 
-    const newGroups = currentItem.customization_options.groups.map((g, gi) => {
-      if (gi !== groupIndex) return g
-      const options = g.options.map((opt, oi) => {
-        if (oi !== optionIndex) return opt
-        return typeof opt === 'string'
-          ? { label: opt, available: !current }
-          : { ...opt, available: !current }
+    const applyToggle = (groups: CustomizationGroup[]) =>
+      groups.map((g, gi) => {
+        if (gi !== groupIndex) return g
+        const options = g.options.map((opt, oi) => {
+          if (oi !== optionIndex) return opt
+          return typeof opt === 'string'
+            ? { label: opt, available: !current }
+            : { ...opt, available: !current }
+        })
+        return { ...g, options }
       })
-      return { ...g, options }
-    })
-    const newOptions = { groups: newGroups }
+
+    const newOptions = { groups: applyToggle(currentItem.customization_options.groups) }
+    const newOptionsEn = currentItem.customization_options_en
+      ? { groups: applyToggle(currentItem.customization_options_en.groups) }
+      : undefined
 
     setItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, customization_options: newOptions } : item
+      item.id === itemId
+        ? { ...item, customization_options: newOptions, customization_options_en: newOptionsEn ?? item.customization_options_en }
+        : item
     ))
 
     startTransition(async () => {
       try {
-        await toggleCustomizationOption(itemId, newOptions)
+        await toggleCustomizationOption(itemId, newOptions, newOptionsEn)
       } catch {
         alert('Failed to update option. Please try again.')
         setItems(initialItems)

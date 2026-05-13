@@ -25,12 +25,18 @@ export async function toggleModifierAvailability(id: string, available: boolean)
 export async function toggleCustomizationOption(
   menuItemId: string,
   newOptions: Json,
+  newOptionsEn?: Json,
 ) {
   const supabase = createSupabaseAdminClient()
 
+  const payload: { customization_options: Json; customization_options_en?: Json } = {
+    customization_options: newOptions,
+  }
+  if (newOptionsEn !== undefined) payload.customization_options_en = newOptionsEn
+
   const { error } = await supabase
     .from('menu_items')
-    .update({ customization_options: newOptions })
+    .update(payload)
     .eq('id', menuItemId)
 
   if (error) {
