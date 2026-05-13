@@ -7,12 +7,13 @@ import { useLocale } from '@/context/LocaleContext'
 import type { MenuByCategory, MenuItem } from '@/lib/getMenu'
 import type { Json } from '@/lib/types'
 
-type CustomizationOption = string | { label: string; price_delta: number }
+type CustomizationOption = string | { label: string; price_delta: number; available?: boolean }
 type CustomizationGroup = { name: string; required?: boolean; multiple?: boolean; options: CustomizationOption[] }
 type CustomizationOptions = { groups: CustomizationGroup[] }
 
 const optLabel = (o: CustomizationOption) => (typeof o === 'string' ? o : o.label)
 const optDelta = (o: CustomizationOption) => (typeof o === 'string' ? 0 : o.price_delta)
+const optAvailable = (o: CustomizationOption) => typeof o === 'string' || o.available !== false
 
 function parseCustomGroups(opts: Json | null): CustomizationGroup[] {
   return (opts as CustomizationOptions | null)?.groups ?? []
@@ -186,7 +187,8 @@ function CustomizationSheet({
   const [customizations, setCustomizations] = useState<Record<string, string[]>>(() => {
     const initial: Record<string, string[]> = {}
     for (const g of groups) {
-      initial[g.name] = g.required && g.options[0] ? [optLabel(g.options[0])] : []
+      const firstAvailable = g.options.find(optAvailable)
+      initial[g.name] = g.required && firstAvailable ? [optLabel(firstAvailable)] : []
     }
     return initial
   })
@@ -270,7 +272,7 @@ function CustomizationSheet({
                     }
                   />
                 )}
-                {group.options.map(opt => {
+                {group.options.filter(optAvailable).map(opt => {
                   const label = optLabel(opt)
                   const delta = optDelta(opt)
                   return (
