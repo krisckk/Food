@@ -25,7 +25,8 @@
       "Bash(git rm *)",
       "Bash(git merge *)",
       "Bash(git *)",
-      "Bash(Select-Object -First 20 FullName)"
+      "Bash(Select-Object -First 20 FullName)",
+      "Bash(findstr supabase *)"
     ]
   }
 }

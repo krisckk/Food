@@ -6,22 +6,20 @@ import { POST } from './route'
 vi.mock('@/lib/supabase', () => ({
   createSupabaseAdminClient: vi.fn(),
 }))
-vi.mock('@/lib/notion', () => ({
-  updateSummaryStatus: vi.fn(),
-}))
 
 import { createSupabaseAdminClient } from '@/lib/supabase'
-import { updateSummaryStatus } from '@/lib/notion'
 
 function makeSupabaseMock() {
+  const eqMock = vi.fn().mockResolvedValue({ error: null })
   const updateMock = vi.fn().mockReturnValue({
-    eq: vi.fn().mockResolvedValue({ error: null }),
+    eq: eqMock,
   })
   return {
     from: vi.fn().mockReturnValue({
       update: updateMock,
     }),
     _updateMock: updateMock,
+    _eqMock: eqMock,
   }
 }
 
@@ -36,15 +34,17 @@ beforeEach(() => {
 })
 
 describe('POST /api/notion/webhook', () => {
-  it('updates summary and Supabase when Order ID is present', async () => {
+  it('updates Supabase when Order ID and Status are present', async () => {
     const mock = makeSupabaseMock()
     vi.mocked(createSupabaseAdminClient).mockReturnValue(mock as never)
-    vi.mocked(updateSummaryStatus).mockResolvedValue('已做完')
 
     const payload = {
       properties: {
         'Order ID': {
           title: [{ text: { content: 'order-123' } }],
+        },
+        'Status': {
+          select: { name: '已做完' },
         },
       },
     }
@@ -55,12 +55,10 @@ describe('POST /api/notion/webhook', () => {
     expect(res.status).toBe(200)
     expect(body.success).toBe(true)
     expect(body.status).toBe('已做完')
-    expect(updateSummaryStatus).toHaveBeenCalledWith('order-123')
     expect(mock._updateMock).toHaveBeenCalledWith({ status: '已做完' })
   })
 
   it('handles nested payload format (data wrapper)', async () => {
-    vi.mocked(updateSummaryStatus).mockResolvedValue('已付款')
     const mock = makeSupabaseMock()
     vi.mocked(createSupabaseAdminClient).mockReturnValue(mock as never)
 
@@ -70,13 +68,18 @@ describe('POST /api/notion/webhook', () => {
           'Order ID': {
             title: [{ text: { content: 'order-456' } }],
           },
+          'Status': {
+            status: { name: '已付款' },
+          },
         },
       },
     }
 
     const res = await POST(makeRequest(payload))
     expect(res.status).toBe(200)
-    expect(updateSummaryStatus).toHaveBeenCalledWith('order-456')
+    const body = await res.json()
+    expect(body.status).toBe('已付款')
+    expect(mock._updateMock).toHaveBeenCalledWith({ status: '已付款' })
   })
 
   it('returns 400 if Order ID is missing', async () => {
@@ -85,13 +88,18 @@ describe('POST /api/notion/webhook', () => {
   })
 
   it('returns 500 on internal error', async () => {
-    vi.mocked(updateSummaryStatus).mockRejectedValue(new Error('Notion error'))
+    vi.mocked(createSupabaseAdminClient).mockImplementation(() => {
+      throw new Error('Supabase error')
+    })
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const payload = {
       properties: {
         'Order ID': {
           title: [{ text: { content: 'order-789' } }],
+        },
+        'Status': {
+          select: { name: '已做完' },
         },
       },
     }
