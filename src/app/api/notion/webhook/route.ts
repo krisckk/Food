@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   return NextResponse.json({ success: true, message: 'Manual sync removed' })
 }
 

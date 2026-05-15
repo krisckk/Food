@@ -5,13 +5,6 @@ type OrderItem = Pick<Tables<'order_items'>, 'menu_item_id' | 'quantity' | 'unit
   name: string
 }
 
-type NotionStatusProp = {
-  type?: string
-  checkbox?: boolean
-  select?: { name: string }
-  status?: { name: string }
-}
-type NotionPageResult = { id: string; properties: Record<string, NotionStatusProp | undefined> }
 
 async function createNotionPage(
   token: string,
